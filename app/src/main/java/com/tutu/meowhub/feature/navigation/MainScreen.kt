@@ -83,9 +83,7 @@ fun MainScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (waitingForReturn) {
             waitingForReturn = false
-            if (needsPairing) {
-                adbViewModel.startPairing()
-            } else {
+            if (!needsPairing) {
                 adbViewModel.startServer()
             }
         }
@@ -126,6 +124,9 @@ fun MainScreen(
             onGoToSettings = {
                 showGuideDialog = false
                 waitingForReturn = true
+                if (needsPairing) {
+                    adbViewModel.startPairing()
+                }
                 adbViewModel.dismissAutoConnectResult()
             }
         )
