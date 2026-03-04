@@ -3,6 +3,7 @@ package com.tutu.miaohub.feature.market
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tutu.miaohub.MiaoApp
 import com.tutu.miaohub.core.model.MiaoSkillItem
 import com.tutu.miaohub.core.model.SkillCategory
 import com.tutu.miaohub.core.model.SkillSortType
@@ -86,6 +87,27 @@ class MarketViewModel : ViewModel() {
                 }
             )
         }
+    }
+
+    private val _saveMessage = MutableStateFlow<String?>(null)
+    val saveMessage: StateFlow<String?> = _saveMessage.asStateFlow()
+
+    fun saveToLocal(slug: String) {
+        viewModelScope.launch {
+            try {
+                val app = MiaoApp.instance
+                val result = app.apiClient.fetchSkillDetail(slug)
+                val detail = result.getOrThrow()
+                app.skillRepository.importFromMarket(detail)
+                _saveMessage.value = "已收藏: ${detail.displayName}"
+            } catch (e: Exception) {
+                _saveMessage.value = "收藏失败: ${e.message}"
+            }
+        }
+    }
+
+    fun consumeSaveMessage() {
+        _saveMessage.value = null
     }
 
     fun loadMore() {

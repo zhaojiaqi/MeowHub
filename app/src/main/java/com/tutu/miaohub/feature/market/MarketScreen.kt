@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -138,13 +139,22 @@ fun MarketScreen(
     viewModel: MarketViewModel = viewModel(),
     engineViewModel: SkillEngineViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val saveMessage by viewModel.saveMessage.collectAsState()
     val client = MiaoApp.instance.tutuClient
     val connectionState by client.connectionState.collectAsState()
     val engineState by engineViewModel.engineState.collectAsState()
 
     var selectedSkill by remember { mutableStateOf<MiaoSkillItem?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(saveMessage) {
+        saveMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.consumeSaveMessage()
+        }
+    }
 
     if (selectedSkill != null) {
         ModalBottomSheet(
@@ -156,6 +166,7 @@ fun MarketScreen(
                 engineState = engineState,
                 connectionState = connectionState,
                 engineViewModel = engineViewModel,
+                onSaveToLocal = { viewModel.saveToLocal(selectedSkill!!.slug) },
                 onDismiss = { selectedSkill = null }
             )
         }
@@ -667,6 +678,7 @@ private fun SkillDetailSheet(
     engineState: SkillEngine.EngineState,
     connectionState: ConnectionState,
     engineViewModel: SkillEngineViewModel,
+    onSaveToLocal: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -788,23 +800,37 @@ private fun SkillDetailSheet(
 
             var showPermissionDialog by remember { mutableStateOf(false) }
 
-            Button(
-                onClick = {
-                    if (allPermissionsGranted(context)) {
-                        val activity = context as? android.app.Activity
-                        engineViewModel.runSkill(skill.slug, activity)
-                    } else {
-                        showPermissionDialog = true
-                    }
-                },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = connectionState == ConnectionState.CONNECTED &&
-                        engineState in listOf(SkillEngine.EngineState.IDLE, SkillEngine.EngineState.FINISHED,
-                            SkillEngine.EngineState.STOPPED, SkillEngine.EngineState.ERROR)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Outlined.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(if (connectionState != ConnectionState.CONNECTED) "请先连接设备" else "运行 Skill")
+                OutlinedButton(
+                    onClick = onSaveToLocal,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Outlined.BookmarkBorder, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("收藏")
+                }
+
+                Button(
+                    onClick = {
+                        if (allPermissionsGranted(context)) {
+                            val activity = context as? android.app.Activity
+                            engineViewModel.runSkill(skill.slug, activity)
+                        } else {
+                            showPermissionDialog = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = connectionState == ConnectionState.CONNECTED &&
+                            engineState in listOf(SkillEngine.EngineState.IDLE, SkillEngine.EngineState.FINISHED,
+                                SkillEngine.EngineState.STOPPED, SkillEngine.EngineState.ERROR)
+                ) {
+                    Icon(Icons.Outlined.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (connectionState != ConnectionState.CONNECTED) "连接设备" else "运行")
+                }
             }
 
             if (showPermissionDialog) {

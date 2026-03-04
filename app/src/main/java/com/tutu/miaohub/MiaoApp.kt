@@ -5,6 +5,8 @@ import android.os.Build
 import android.util.Log
 import com.tutu.miaohub.BuildConfig
 import com.tutu.miaohub.core.auth.TutuAuthManager
+import com.tutu.miaohub.core.database.LocalSkillRepository
+import com.tutu.miaohub.core.database.MeowHubDatabase
 import com.tutu.miaohub.core.engine.*
 import com.tutu.miaohub.core.network.MiaoHubApiClient
 import com.tutu.miaohub.core.socket.TutuSocketClient
@@ -22,6 +24,9 @@ class MiaoApp : Application() {
         DeviceInfoCache(tutuClient).also { it.observeConnection() }
     }
     val apiClient: MiaoHubApiClient by lazy { MiaoHubApiClient() }
+
+    val database: MeowHubDatabase by lazy { MeowHubDatabase.getInstance(this) }
+    val skillRepository: LocalSkillRepository by lazy { LocalSkillRepository(database.skillDao()) }
 
     val skillEngine: SkillEngine by lazy {
         val bridge = SocketCommandBridge(tutuClient, deviceCache)

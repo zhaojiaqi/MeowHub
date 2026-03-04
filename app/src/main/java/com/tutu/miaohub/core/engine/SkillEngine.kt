@@ -118,6 +118,25 @@ class SkillEngine(
 
     // ── 执行入口 ──
 
+    suspend fun runLocalSkill(skill: MiaoSkillDetail) {
+        reset()
+        _state.value = EngineState.LOADING
+        log("STEP", "▶ 加载本地 Skill: ${skill.slug}")
+
+        if (skill.steps.isEmpty()) {
+            log("ERR", "Skill 没有步骤")
+            _state.value = EngineState.ERROR
+            _runResult.value = RunResult("failed", 0, 0, 0, "Skill 没有步骤")
+            return
+        }
+
+        _currentSkill.value = skill
+        _state.value = EngineState.RUNNING
+        shouldStop = false
+
+        runSkillInternal(skill)
+    }
+
     suspend fun runSkill(slug: String) {
         reset()
         _state.value = EngineState.LOADING
@@ -145,6 +164,10 @@ class SkillEngine(
         _state.value = EngineState.RUNNING
         shouldStop = false
 
+        runSkillInternal(skill)
+    }
+
+    private suspend fun runSkillInternal(skill: MiaoSkillDetail) {
         val context = mutableMapOf<String, Any?>()
         var tokensUsed = 0
         var completedSteps = 0
@@ -153,7 +176,6 @@ class SkillEngine(
 
         log("STEP", "▶ Skill \"${skill.displayName}\" 开始, ${skill.steps.size} 步骤")
 
-        // 提取目标 App 包名并订阅无障碍事件
         val targetPkg = extractInitialTargetPackage(skill)
         if (targetPkg != null) {
             val subscribed = bridge.subscribeAccessibilityEvents(
@@ -191,7 +213,6 @@ class SkillEngine(
 
                     updateStepStatus(i, StepStatus.DONE)
 
-                    // next_step 路由
                     val nextStep = step.nextStep.ifEmpty { jumpTarget ?: "" }
                     if (nextStep.isNotEmpty() && nextStep != "next") {
                         if (nextStep == "end") {

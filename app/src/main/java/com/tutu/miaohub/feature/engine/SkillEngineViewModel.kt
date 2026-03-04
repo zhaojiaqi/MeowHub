@@ -48,6 +48,13 @@ class SkillEngineViewModel : ViewModel() {
         }
     }
 
+    fun runLocalSkill(skill: MiaoSkillDetail, activity: Activity? = null) {
+        activity?.moveTaskToBack(true)
+        viewModelScope.launch {
+            engine.runLocalSkill(skill)
+        }
+    }
+
     fun pause() = engine.pause()
     fun resume() = engine.resume()
     fun stop() = engine.stop()
