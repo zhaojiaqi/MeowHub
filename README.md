@@ -36,28 +36,33 @@ MeowHub is an open-source Android app that turns your phone into an **AI-powered
 
 ### Why MeowHub? — A Fundamental Difference from Accessibility-Based Solutions
 
-Most phone automation tools (Auto.js, Hamibot, Accessibility-based solutions, etc.) rely on Android's **AccessibilityService** to perform actions. This approach has critical flaws:
+Most phone automation tools (Auto.js, Hamibot, etc.) rely on Android's **AccessibilityService**. This approach has critical flaws. MeowHub uses the **system-level ADB protocol**, solving these problems by design:
 
-| | Accessibility-Based Solutions | MeowHub (ADB-Based) |
-|---|---|---|
-| **Implementation Level** | Application-layer API, sandboxed | System-level ADB protocol, same as developer debugging tools |
-| **Stability** | Prone to breakage from OS updates, inconsistent across OEM ROMs | Standard ADB protocol ensures consistent and stable behavior |
-| **Detection Risk** | **High Risk** — Major apps like WeChat, TikTok, Taobao, and Alipay actively detect Accessibility Services, triggering risk controls or even **account bans** | **Zero Detection Risk** — ADB operations happen at the system level, completely transparent to target apps, equivalent to real finger touches, undetectable by applications |
-| **Permission Management** | Requires manual Accessibility permission grants; some systems repeatedly prompt or auto-revoke | One-time pairing, persistent connection, no repeated authorization |
-| **Operation Scope** | Limited to UI elements with Accessibility nodes; unable to handle games/Canvas/WebView | Supports touch, swipe, and key input at any screen position, framework-agnostic |
+> **System-Level, Undetectable**
+> Accessibility-based solutions run at the application layer. Major apps like WeChat, TikTok, Taobao, and Alipay actively detect Accessibility Services — triggering risk controls or even **account bans**. MeowHub operates through ADB at the system level, completely transparent to target apps, equivalent to real finger touches, **undetectable by any application**.
 
-**In short: Accessibility-based solutions are "sneaking around on someone else's turf" — always at risk of being detected and blocked. MeowHub's ADB approach is "operating with system-level authority" — stable, secure, and undetectable.**
+> **Stable & Reliable, One-Time Pairing**
+> Accessibility permissions are fragile — broken by OS updates, inconsistent across OEM ROMs, auto-revoked or interrupted by system prompts. MeowHub uses the standard ADB protocol for consistent and stable behavior. Pair once, use permanently — no repeated authorization needed.
+
+> **No Blind Spots**
+> Accessibility can only interact with UI elements that have Accessibility nodes — games, Canvas, and WebView are out of reach. MeowHub supports touch, swipe, and key input at any screen position, completely framework-agnostic.
+
+**In short:** Accessibility-based solutions are "sneaking around on someone else's turf" — always at risk of detection. MeowHub is "operating with system-level authority" — stable, secure, and undetectable.
+
+---
 
 ### The Hands and Feet of AI — More Than Automation
 
-MeowHub is not just another RPA tool. Through deep integration with Large Language Models (LLMs), MeowHub becomes **the bridge between AI and the physical world (your phone)**:
+MeowHub is not just another RPA tool. Through deep integration with Large Language Models (LLMs), it becomes **the bridge between AI and the physical world**:
 
-- **AI can "See"** — Screenshots + vision analysis let AI understand anything on screen
-- **AI can "Think"** — Based on current screen state and context, AI makes intelligent decisions
-- **AI can "Act"** — Through system-level ADB operations, AI decisions are translated into precise touches, swipes, and inputs — real physical actions
-- **AI can "Learn"** — The declarative Skill system enables AI capabilities to accumulate and evolve
+- **AI can "See"** — Screenshots + vision analysis to understand anything on screen
+- **AI can "Think"** — Intelligent decisions based on screen state and context
+- **AI can "Act"** — ADB operations translate decisions into real touches, swipes, and inputs
+- **AI can "Learn"** — Declarative Skill system enables capabilities to accumulate and evolve
 
-This makes MeowHub one of the few open-source solutions that lets AI **truly reach physical devices and execute real-world actions**. It's not simulating, it's not calling APIs — it's using your phone, operating like a human.
+MeowHub is one of the few open-source solutions that lets AI **truly reach physical devices and execute real-world actions**. It's not simulating, it's not calling APIs — it's using your phone, operating like a human.
+
+---
 
 ### Key Features
 
