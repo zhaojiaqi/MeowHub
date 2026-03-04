@@ -252,11 +252,7 @@ These are active areas where the current implementation has room for significant
 
 ## Star History
 
-<p align="center">
-  <a href="https://github.com/zhaojiaqi/MeowHub/stargazers">
-    <img src="https://img.shields.io/github/stars/zhaojiaqi/MeowHub?style=for-the-badge" alt="Star History" />
-  </a>
-</p>
+[![Star History Chart](https://api.star-history.com/svg?repos=zhaojiaqi/MeowHub&type=date&legend=top-left)](https://www.star-history.com/#zhaojiaqi/MeowHub&type=date&legend=top-left)
 
 ---
 

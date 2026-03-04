@@ -250,13 +250,9 @@ the Free Software Foundation, either version 3 of the License, or
 
 这些都是当前实现中仍有显著提升空间的方向。如果你对 RPA 自动化或 LLM 驱动的 Agent 感兴趣，这是一个非常值得深入的项目！
 
-## Star 趋势
+## Star History
 
-<p align="center">
-  <a href="https://github.com/zhaojiaqi/MeowHub/stargazers">
-    <img src="https://img.shields.io/github/stars/zhaojiaqi/MeowHub?style=for-the-badge" alt="Star History" />
-  </a>
-</p>
+[![Star History Chart](https://api.star-history.com/svg?repos=zhaojiaqi/MeowHub&type=date&legend=top-left)](https://www.star-history.com/#zhaojiaqi/MeowHub&type=date&legend=top-left)
 
 ---
 
