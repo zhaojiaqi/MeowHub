@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://tutuai.me">Official Website</a> •
   <a href="README_CN.md">中文文档</a> •
   <a href="docs/skill-development-guide.md">Skill Development Guide</a> •
   <a href="skills/">Skill Gallery</a> •
@@ -116,7 +117,9 @@ TUTU_APP_ID=your_app_id_here
 TUTU_APP_SECRET=your_app_secret_here
 ```
 
-> You can obtain a Doubao API key from [Volcengine](https://www.volcengine.com/product/doubao). The AI provider is pluggable — contributions for other LLM providers (OpenAI, Gemini, etc.) are welcome!
+> **Doubao API key**: Obtain from [Volcengine](https://www.volcengine.com/product/doubao). The AI provider is pluggable — contributions for other LLM providers (OpenAI, Gemini, etc.) are welcome!
+>
+> **TUTU_APP_ID / TUTU_APP_SECRET**: Used to connect to TUTU Smart Control device services. Visit the [project official website](https://tutuai.me), log in, go to **User Center** → **TUTU API KEY**, and click "Apply for API KEY" to get your App ID and App Secret.
 
 3. **Build and install**
 
@@ -224,7 +227,7 @@ Special thanks to the developers and communities behind these projects. Their wo
 
 ## Author
 
-**zivzhao** — [GitHub](https://github.com/zhaojiaqi) · [Email](mailto:zivzhao@icloud.com)
+**zivzhao** — [Official Website](https://tutuai.me) · [GitHub](https://github.com/zhaojiaqi) · [Email](mailto:zivzhao@icloud.com)
 
 ## License
 

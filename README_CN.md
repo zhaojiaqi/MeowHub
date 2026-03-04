@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://tutuai.me">项目官网</a> •
   <a href="README.md">English</a> •
   <a href="docs/skill-development-guide.md">Skill 开发指南</a> •
   <a href="skills/">技能库</a> •
@@ -116,7 +117,9 @@ TUTU_APP_ID=你的应用ID
 TUTU_APP_SECRET=你的应用密钥
 ```
 
-> 豆包 API 密钥可从[火山引擎](https://www.volcengine.com/product/doubao)获取。AI Provider 采用插件化设计，欢迎贡献其他 LLM 适配（OpenAI、Gemini 等）！
+> **豆包 API 密钥**：可从[火山引擎](https://www.volcengine.com/product/doubao)获取。AI Provider 采用插件化设计，欢迎贡献其他 LLM 适配（OpenAI、Gemini 等）！
+>
+> **TUTU_APP_ID / TUTU_APP_SECRET**：用于连接图图智控设备控制服务。请访问[项目官网 tutuai.me](https://tutuai.me)，登录后进入 **个人中心** → **TUTU API KEY**，点击「申请 API KEY」即可获得 App ID 和 App Secret。
 
 3. **编译安装**
 
@@ -224,7 +227,7 @@ MeowHub 站在以下优秀开源项目的肩膀上：
 
 ## 作者
 
-**zivzhao** — [GitHub](https://github.com/zhaojiaqi) · [Email](mailto:zivzhao@icloud.com)
+**zivzhao** — [项目官网](https://tutuai.me) · [GitHub](https://github.com/zhaojiaqi) · [Email](mailto:zivzhao@icloud.com)
 
 ## 许可证
 
