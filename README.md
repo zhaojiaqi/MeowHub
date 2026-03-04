@@ -239,20 +239,6 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 ```
 
-## Open Source Scope
-
-This repository contains the **MeowHub Android app** source code, including the complete Skill Engine, AI Provider integration, wireless ADB implementation, and all UI code.
-
-**What's open source:**
-- Skill Engine — the core execution engine (`SkillEngine.kt`, 1200+ lines), including all step executors, variable system, branching logic, and AI integration
-- AI Provider — pluggable LLM interface and Doubao implementation
-- Wireless ADB — full ADB v2 protocol stack with TLS/SPAKE2 pairing
-- All UI code — Jetpack Compose screens, navigation, overlay
-
-**What's NOT open source:**
-- Server-side services (MeowHub API, Skill marketplace backend)
-- TutuGui Server (the `scrcpy-server.jar` variant running on-device)
-
 ### Help Wanted
 
 We especially welcome contributions that improve the **Skill Engine's core algorithms**:

@@ -239,20 +239,6 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 ```
 
-## 开源范围
-
-本仓库包含 **MeowHub Android App** 的完整源代码，包括 Skill 引擎、AI Provider 集成、无线 ADB 实现和所有 UI 代码。
-
-**开源部分：**
-- Skill 引擎 — 核心执行引擎（`SkillEngine.kt`，1200+ 行），包含所有步骤执行器、变量系统、分支逻辑和 AI 集成
-- AI Provider — 可插拔的大模型接口和豆包实现
-- 无线 ADB — 完整的 ADB v2 协议栈，支持 TLS/SPAKE2 配对
-- 所有 UI 代码 — Jetpack Compose 界面、导航、悬浮窗
-
-**不开源部分：**
-- 服务端服务（MeowHub API、技能市场后端）
-- TutuGui Server（运行在设备上的 scrcpy-server 变体 jar 组件）
-
 ### 期待你的贡献
 
 我们特别欢迎对 **Skill 引擎核心算法** 的优化贡献：
