@@ -30,7 +30,7 @@
 
 ## What is MeowHub?
 
-MeowHub is an open-source Android app that turns your phone into an **AI-powered automation agent**. It uses a built-in **Skill Engine** to execute step-by-step automation tasks — combining wireless ADB control, screen understanding via AI, and accessibility events — all without root access.
+MeowHub is an open-source Android app that turns your phone into an **AI-powered automation agent**. Think of it as **AI hands** — like [OpenClaw](https://github.com/openclaw/openclaw) and Phone Agent, it lets AI "see" your screen, "tap" buttons, and "swipe" through apps. The difference: MeowHub runs entirely on your device, is fully open-source, and uses a declarative **Skill Engine** so you can create and share automation skills in JSON — no coding required.
 
 **Our vision:** Everyone can create and share their own phone AI avatar skills.
 

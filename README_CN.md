@@ -30,7 +30,7 @@
 
 ## MeowHub 是什么？
 
-MeowHub 是一款开源 Android 应用，可以把你的手机变成一个 **AI 驱动的自动化代理**。它通过内置的 **Skill 引擎** 执行步骤式自动化任务——结合无线 ADB 控制、AI 截图理解和无障碍事件——全程无需 Root 权限。
+MeowHub 是一款开源 Android 应用，可以把你的手机变成一个 **AI 驱动的自动化代理**。你可以把它理解成 **AI 手脚** — 类似 [OpenClaw](https://github.com/openclaw/openclaw)、Phone Agent 等方案，让 AI 能够「看」屏幕、「点」按钮、「滑」操作。不同的是：MeowHub 完全本地运行、开源可审计，并通过声明式 **Skill 引擎** 让你用 JSON 定义和分享自动化技能，无需写代码。
 
 **我们的愿景：** 让每个人都能创建和分享自己的手机 AI 分身技能。
 
