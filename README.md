@@ -30,15 +30,40 @@
 
 ## What is MeowHub?
 
-MeowHub is an open-source Android app that turns your phone into an **AI-powered automation agent**. Think of it as **AI hands** — like [OpenClaw](https://github.com/openclaw/openclaw) and Phone Agent, it lets AI "see" your screen, "tap" buttons, and "swipe" through apps. The difference: MeowHub runs entirely on your device, is fully open-source, and uses a declarative **Skill Engine** so you can create and share automation skills in JSON — no coding required.
+MeowHub is an open-source Android app that turns your phone into an **AI-powered automation agent**. It serves as **the hands and feet of AI in the physical world** — enabling AI to truly "see" your screen, "tap" buttons, and "swipe" through apps to accomplish any task on your phone. MeowHub runs entirely on your device, is fully open-source, and uses a declarative **Skill Engine** so you can create and share automation skills in JSON — no coding required.
 
-**Our vision:** Everyone can create and share their own phone AI avatar skills.
+**Our vision:** Everyone can create and share their own phone AI avatar skills — giving AI the power to interact with the physical world.
+
+### Why MeowHub? — A Fundamental Difference from Accessibility-Based Solutions
+
+Most phone automation tools (Auto.js, Hamibot, Accessibility-based solutions, etc.) rely on Android's **AccessibilityService** to perform actions. This approach has critical flaws:
+
+| | Accessibility-Based Solutions | MeowHub (ADB-Based) |
+|---|---|---|
+| **Implementation Level** | Application-layer API, sandboxed | System-level ADB protocol, same as developer debugging tools |
+| **Stability** | Prone to breakage from OS updates, inconsistent across OEM ROMs | Standard ADB protocol ensures consistent and stable behavior |
+| **Detection Risk** | **High Risk** — Major apps like WeChat, TikTok, Taobao, and Alipay actively detect Accessibility Services, triggering risk controls or even **account bans** | **Zero Detection Risk** — ADB operations happen at the system level, completely transparent to target apps, equivalent to real finger touches, undetectable by applications |
+| **Permission Management** | Requires manual Accessibility permission grants; some systems repeatedly prompt or auto-revoke | One-time pairing, persistent connection, no repeated authorization |
+| **Operation Scope** | Limited to UI elements with Accessibility nodes; unable to handle games/Canvas/WebView | Supports touch, swipe, and key input at any screen position, framework-agnostic |
+
+**In short: Accessibility-based solutions are "sneaking around on someone else's turf" — always at risk of being detected and blocked. MeowHub's ADB approach is "operating with system-level authority" — stable, secure, and undetectable.**
+
+### The Hands and Feet of AI — More Than Automation
+
+MeowHub is not just another RPA tool. Through deep integration with Large Language Models (LLMs), MeowHub becomes **the bridge between AI and the physical world (your phone)**:
+
+- **AI can "See"** — Screenshots + vision analysis let AI understand anything on screen
+- **AI can "Think"** — Based on current screen state and context, AI makes intelligent decisions
+- **AI can "Act"** — Through system-level ADB operations, AI decisions are translated into precise touches, swipes, and inputs — real physical actions
+- **AI can "Learn"** — The declarative Skill system enables AI capabilities to accumulate and evolve
+
+This makes MeowHub one of the few open-source solutions that lets AI **truly reach physical devices and execute real-world actions**. It's not simulating, it's not calling APIs — it's using your phone, operating like a human.
 
 ### Key Features
 
 - **Skill Engine** — A declarative JSON-based automation engine supporting 15+ step types: API calls, AI vision analysis, conditional branching, loops, user prompts, and more
 - **AI-Powered Actions** — Leverages LLM (Large Language Model) to understand screenshots, locate UI elements, and make intelligent decisions
-- **Wireless ADB** — Fully self-contained ADB implementation with mDNS discovery, TLS pairing (SPAKE2), and RSA key persistence — no PC required
+- **System-Level ADB** — Fully self-contained ADB implementation with mDNS discovery, TLS pairing (SPAKE2), and RSA key persistence — no PC required, zero detection risk
 - **Skill Marketplace** — Browse, search, and run community-created skills with one tap
 - **Overlay Control** — Floating panel for quick actions and real-time skill execution status
 - **Open Ecosystem** — Create your own skills in JSON, contribute to the community, and build your personal phone AI avatar
