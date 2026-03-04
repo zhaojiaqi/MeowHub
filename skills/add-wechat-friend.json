@@ -3,7 +3,7 @@
   "display_name": "添加微信好友",
   "display_name_en": "Add WeChat Friend",
   "version": "1.3.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "打开微信，通过微信号或手机号搜索并添加好友，支持自定义验证消息",
   "description_en": "Open WeChat, search by ID or phone number and send friend request",
   "icon": "user-plus",

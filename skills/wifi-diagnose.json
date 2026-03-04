@@ -3,7 +3,7 @@
   "display_name": "WiFi 网络诊断",
   "display_name_en": "WiFi Diagnostics",
   "version": "1.1.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "检查 WiFi 连接状态、信号强度和网络信息，生成网络诊断报告",
   "description_en": "Check WiFi connection, signal strength and generate network report",
   "icon": "wifi",

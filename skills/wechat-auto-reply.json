@@ -3,7 +3,7 @@
   "display_name": "微信托管",
   "display_name_en": "WeChat Auto Reply",
   "version": "1.0.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "托管微信消息，AI自动回复所有新消息，支持自定义托管时长和AI角色",
   "description_en": "Auto-reply to all WeChat messages with customizable AI persona",
   "icon": "message-circle",

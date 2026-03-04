@@ -198,8 +198,7 @@ static void PairingContext_Destroy(JNIEnv *, jobject, jlong ptr) {
     free(ctx);
 }
 
-// JNI class name updated to MiaoHub's package
-static const char *kPairingContextClass = "com/tutu/miaohub/core/adb/PairingContext";
+static const char *kPairingContextClass = "com/tutu/meowhub/core/adb/PairingContext";
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     JNIEnv *env = nullptr;

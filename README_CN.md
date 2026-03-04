@@ -195,7 +195,7 @@ MeowHub 的强大来自其 **可扩展的 Skill 系统**。技能通过简单的
 ## 项目结构
 
 ```
-app/src/main/java/com/tutu/miaohub/
+app/src/main/java/com/tutu/meowhub/
 ├── core/
 │   ├── adb/          # 无线 ADB 协议栈
 │   ├── auth/         # Token 认证

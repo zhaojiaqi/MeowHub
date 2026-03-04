@@ -3,7 +3,7 @@
   "display_name": "短剧广告跳过器",
   "display_name_en": "TikTok Drama Ad Skipper",
   "version": "1.1.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "请先在抖音打开短剧并播放到当前集，然后启动本技能。自动帮你看完广告倒计时、关闭广告并滑到下一集，无需手动操作",
   "description_en": "Open a TikTok drama and play the current episode first, then start this skill. It auto-waits for ad countdowns, closes ads and swipes to next episode",
   "icon": "fast-forward",

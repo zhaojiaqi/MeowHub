@@ -3,7 +3,7 @@
   "display_name": "手机状态巡检",
   "display_name_en": "Phone Health Check",
   "version": "1.1.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "一键检查手机电量、存储、网络等基本状态，生成巡检报告",
   "description_en": "Check battery, storage, network and generate a health report",
   "icon": "activity",

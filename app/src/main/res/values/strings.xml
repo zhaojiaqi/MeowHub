@@ -15,6 +15,7 @@
     <string name="connecting_to">Connecting to %1$s:%2$d …</string>
     <string name="connected_to">Connected to %1$s:%2$d</string>
     <string name="connection_failed">Connection failed: %1$s</string>
+    <string name="connection_refused_hint">TUTU service not ready. Please start the service first, then retry.</string>
     <string name="disconnecting">Disconnecting</string>
     <string name="not_connected_cannot_send">Not connected, cannot send</string>
     <string name="send_failed">Send failed: %1$s</string>

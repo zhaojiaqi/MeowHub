@@ -32,8 +32,8 @@ UI 定位、条件判断等高级操作。
 ## 项目结构
 
 ```
-app/src/main/java/com/tutu/miaohub/
-├── MiaoApp.kt                    # Application 入口
+app/src/main/java/com/tutu/meowhub/
+├── MeowApp.kt                    # Application 入口
 ├── MainActivity.kt               # 主 Activity
 ├── core/
 │   ├── adb/                       # ADB 无线调试协议栈

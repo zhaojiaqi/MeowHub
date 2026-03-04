@@ -195,7 +195,7 @@ We encourage everyone to create and share skills! Submit your skills via Pull Re
 ## Project Structure
 
 ```
-app/src/main/java/com/tutu/miaohub/
+app/src/main/java/com/tutu/meowhub/
 ├── core/
 │   ├── adb/          # Wireless ADB protocol stack
 │   ├── auth/         # Token authentication

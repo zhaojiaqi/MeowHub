@@ -3,7 +3,7 @@
   "display_name": "短信快速摘要",
   "display_name_en": "SMS Summary",
   "version": "1.1.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "打开短信应用，查看最近短信并生成智能摘要",
   "description_en": "Open Messages app, read recent SMS and generate summary",
   "icon": "mail",

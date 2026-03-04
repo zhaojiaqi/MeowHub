@@ -15,6 +15,7 @@
     <string name="connecting_to">正在连接 %1$s:%2$d …</string>
     <string name="connected_to">已连接 %1$s:%2$d</string>
     <string name="connection_failed">连接失败: %1$s</string>
+    <string name="connection_refused_hint">TUTU 服务未就绪，请先启动服务后再重试。</string>
     <string name="disconnecting">断开连接中</string>
     <string name="not_connected_cannot_send">未连接，无法发送</string>
     <string name="send_failed">发送失败: %1$s</string>

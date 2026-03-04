@@ -16,7 +16,7 @@ fun secret(key: String, fallback: String = ""): String =
     secrets.getProperty(key, fallback)
 
 android {
-    namespace = "com.tutu.miaohub"
+    namespace = "com.tutu.meowhub"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tutu.miaohub"
+        applicationId = "com.tutu.meowhub"
         minSdk = 28
         targetSdk = 36
         versionCode = 1

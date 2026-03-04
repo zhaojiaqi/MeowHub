@@ -3,7 +3,7 @@
   "display_name": "存储清理建议",
   "display_name_en": "Storage Cleanup Tips",
   "version": "1.1.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "检查手机存储空间使用情况，给出清理建议",
   "description_en": "Check storage usage and provide cleanup suggestions",
   "icon": "hard-drive",

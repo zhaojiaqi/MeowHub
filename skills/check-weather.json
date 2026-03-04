@@ -3,7 +3,7 @@
   "display_name": "查看天气",
   "display_name_en": "Check Weather",
   "version": "1.8.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "查看今日天气预报，优先从桌面Widget读取，其次打开天气App，最后走浏览器搜索",
   "description_en": "Check today's weather: prefer home screen widget, then weather app, fallback to browser",
   "icon": "cloud-sun",

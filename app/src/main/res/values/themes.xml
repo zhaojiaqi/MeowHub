@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.MiaoHub" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.MeowHub" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Theme.MiaoHub.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.MeowHub.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#FFF5B731</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
-        <item name="postSplashScreenTheme">@style/Theme.MiaoHub</item>
+        <item name="postSplashScreenTheme">@style/Theme.MeowHub</item>
     </style>
 
 </resources>

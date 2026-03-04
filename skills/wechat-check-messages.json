@@ -3,7 +3,7 @@
   "display_name": "微信查看新消息",
   "display_name_en": "Check WeChat Messages",
   "version": "1.0.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "打开微信，检查是否有未读消息，查看并汇报消息内容",
   "description_en": "Open WeChat, check for unread messages and summarize",
   "icon": "message-circle",

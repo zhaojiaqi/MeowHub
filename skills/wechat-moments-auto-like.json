@@ -3,7 +3,7 @@
   "display_name": "朋友圈自动点赞",
   "display_name_en": "WeChat Moments Auto Like",
   "version": "2.0.0",
-  "author": "miaohub-official",
+  "author": "meowhub-official",
   "description": "自动对微信朋友圈最新 N 条动态进行点赞，N 由用户选择（5/10/20/50）。评论入口通过 UI 节点定位（0 Token），赞按钮通过 AI 视觉识别点击。",
   "description_en": "Auto-like the latest N WeChat moments posts (5/10/20/50). Comment button located via UI node (0 Token), like button clicked via AI vision.",
   "icon": "heart",

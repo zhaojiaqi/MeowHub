@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MiaoHub"
+rootProject.name = "MeowHub"
 include(":app")
  
