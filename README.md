@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="MeowHub Logo" width="120" />
+  <img src="docs/assets/logo_banner.png" alt="MeowHub" width="560" />
 </p>
 
 <h1 align="center">MeowHub (喵控)</h1>
