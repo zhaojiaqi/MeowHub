@@ -1,0 +1,75 @@
+{
+  "name": "daily-news",
+  "display_name": "每日新闻速览",
+  "display_name_en": "Daily News Brief",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开浏览器查看今日热点新闻，快速了解天下事",
+  "description_en": "Open browser and browse today's top news headlines",
+  "icon": "newspaper",
+  "category": "daily",
+  "tags": ["新闻", "热点", "资讯", "日常"],
+  "estimated_time": "20s",
+  "estimated_tokens": 800,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "open_browser",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.browser" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "浏览器打开失败，尝试打开 Chrome 或任意可用浏览器。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_browser",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "navigate_news",
+      "type": "ai_act",
+      "prompt": "在浏览器地址栏输入 'news.qq.com' 或搜索'今日热点新闻'并访问。",
+      "max_loops": 3
+    },
+    {
+      "id": "wait_news",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "read_headlines",
+      "type": "ai_check",
+      "prompt": "阅读新闻页面，用中文汇报今日 5 条最重要的新闻：\n1. 【分类】标题 — 一句话摘要"
+    },
+    {
+      "id": "scroll_more",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "up", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_scroll",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 600
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "综合已浏览内容，补充 3 条新闻，用一句话总结今日新闻整体基调。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

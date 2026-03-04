@@ -1,0 +1,205 @@
+{
+  "name": "wechat-moments-auto-like",
+  "display_name": "朋友圈自动点赞",
+  "display_name_en": "WeChat Moments Auto Like",
+  "version": "2.0.0",
+  "author": "miaohub-official",
+  "description": "自动对微信朋友圈最新 N 条动态进行点赞，N 由用户选择（5/10/20/50）。评论入口通过 UI 节点定位（0 Token），赞按钮通过 AI 视觉识别点击。",
+  "description_en": "Auto-like the latest N WeChat moments posts (5/10/20/50). Comment button located via UI node (0 Token), like button clicked via AI vision.",
+  "icon": "heart",
+  "category": "social",
+  "tags": ["微信", "朋友圈", "点赞", "社交", "RPA"],
+  "estimated_time": "60s",
+  "estimated_tokens": 500,
+  "requires": { "apps": ["com.tencent.mm"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_count",
+      "type": "prompt_user",
+      "title": "朋友圈自动点赞",
+      "fields": [
+        {
+          "key": "count",
+          "label": "要点赞的数量",
+          "type": "select",
+          "options": ["5", "10", "20", "50"],
+          "default": "10"
+        }
+      ],
+      "timeout": 30,
+      "timeout_action": "use_default"
+    },
+    {
+      "id": "init_liked",
+      "type": "set_var",
+      "var": "_liked_count",
+      "value": "0"
+    },
+    {
+      "id": "open_wechat",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.tencent.mm" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "check_main",
+      "type": "ai_check",
+      "prompt": "观察当前微信界面，判断状态：\n- 如果已经在微信主界面（能看到底部有微信/通讯录/发现/我等Tab），没有弹窗遮挡，回复包含「正常」\n- 如果有弹窗（更新提示、权限请求等）或不在微信主界面，回复包含「异常」",
+      "branch_mode": "keyword",
+      "branches": [
+        { "match": "正常", "label": "微信主界面", "goto": "go_discover" },
+        { "match": "异常", "label": "需要处理", "goto": "handle_popup" }
+      ],
+      "default_branch": { "goto": "go_discover", "label": "默认继续" }
+    },
+    {
+      "id": "handle_popup",
+      "type": "ai_act",
+      "prompt": "当前微信界面有弹窗或不在主界面，请处理：\n1. 关闭所有弹窗（更新提示点「取消」或「稍后」、权限请求点「拒绝」等）\n2. 如果不在微信主界面，返回到微信主界面（点击底部「微信」Tab）\n处理完毕确认在微信主界面后完成。",
+      "max_loops": 3,
+      "next_step": "check_main"
+    },
+    {
+      "id": "go_discover",
+      "type": "ui_locate",
+      "text": "发现",
+      "class_name": "TextView",
+      "action": "click",
+      "on_fail": "skip_with_message",
+      "fail_message": "未找到「发现」Tab，尝试 AI 恢复"
+    },
+    {
+      "id": "wait_discover",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 500
+    },
+    {
+      "id": "go_moments",
+      "type": "ui_locate",
+      "text": "朋友圈",
+      "action": "click",
+      "on_fail": "skip_with_message",
+      "fail_message": "未找到「朋友圈」入口"
+    },
+    {
+      "id": "wait_moments",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "check_moments",
+      "type": "ai_check",
+      "prompt": "观察当前界面，判断是否已经进入微信朋友圈（能看到好友的动态内容列表，每条动态有头像、昵称、内容等）：\n- 如果已经在朋友圈动态列表界面，回复包含「正常」\n- 如果不在朋友圈（还在发现页、或微信主页、或其他页面），回复包含「异常」",
+      "branch_mode": "keyword",
+      "branches": [
+        { "match": "正常", "label": "已进入朋友圈", "goto": "like_loop" },
+        { "match": "异常", "label": "未进入朋友圈", "goto": "recover_moments" }
+      ],
+      "default_branch": { "goto": "like_loop", "label": "默认继续" }
+    },
+    {
+      "id": "recover_moments",
+      "type": "ai_act",
+      "prompt": "当前未在微信朋友圈界面。请操作进入朋友圈：\n1. 如果在微信主界面，点击底部「发现」Tab，然后点击「朋友圈」\n2. 如果在其他页面，先返回微信主界面再进入\n成功进入朋友圈后完成。",
+      "max_loops": 5,
+      "next_step": "check_moments"
+    },
+    {
+      "id": "like_loop",
+      "type": "loop",
+      "label": "朋友圈点赞",
+      "max_iterations": 100,
+      "max_duration": 300000,
+      "loop_steps": [
+        {
+          "id": "loop_click_comment_btn",
+          "type": "ui_locate",
+          "description": "评论",
+          "action": "click",
+          "on_fail": "continue"
+        },
+        {
+          "id": "loop_wait_popup",
+          "type": "wait",
+          "duration": 800
+        },
+        {
+          "id": "loop_click_like",
+          "type": "ai_act",
+          "prompt": "点击评论按钮后弹出了一个小浮窗，浮窗里左边是「赞」按钮（爱心图标），右边是「评论」按钮（消息图标）。\n- 如果能看到这个浮窗，且左边显示的是「赞」（未点赞状态），请 click 点击它\n- 如果左边显示的是「取消」或「取消赞」或已经是红色高亮心形（表示已经赞过了），直接 finished 跳过，不要点击\n- 如果没有看到浮窗，直接 finished",
+          "max_loops": 1
+        },
+        {
+          "id": "loop_wait_like",
+          "type": "wait",
+          "duration": 800
+        },
+        {
+          "id": "loop_count",
+          "type": "set_var",
+          "var": "_liked_count",
+          "op": "increment",
+          "value": "1"
+        },
+        {
+          "id": "loop_condition",
+          "type": "condition",
+          "expression": "_liked_count >= (parseInt(input.count, 10) || 10)",
+          "goto": "break",
+          "skip_to": "loop_scroll"
+        },
+        {
+          "id": "loop_scroll",
+          "type": "api",
+          "action": "scroll",
+          "params": { "direction": "down" }
+        },
+        {
+          "id": "loop_wait_scroll",
+          "type": "wait",
+          "duration": 1000
+        },
+        {
+          "id": "loop_check_track",
+          "type": "condition",
+          "expression": "_liked_count > 0 && _liked_count % 5 === 0",
+          "goto": "loop_ai_verify",
+          "skip_to": "loop_click_comment_btn"
+        },
+        {
+          "id": "loop_ai_verify",
+          "type": "ai_check",
+          "prompt": "快速确认当前界面是否还在微信朋友圈动态列表中（能看到好友动态）：\n- 如果在朋友圈，回复「正常」\n- 如果偏离了（进入了聊天、设置或其他页面），回复「异常」",
+          "branch_mode": "keyword",
+          "branches": [
+            { "match": "正常", "label": "仍在朋友圈" },
+            { "match": "异常", "label": "已偏离", "goto": "break" }
+          ],
+          "default_branch": { "label": "继续" }
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "朋友圈自动点赞任务已完成。用户设定点赞数量为 ${input.count} 条，实际完成点赞 ${_liked_count} 条。请生成简洁的执行报告。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home",
+      "next_step": "end"
+    }
+  ]
+}

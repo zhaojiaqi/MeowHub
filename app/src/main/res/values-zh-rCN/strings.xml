@@ -1,0 +1,203 @@
+<resources>
+    <string name="app_name">喵控</string>
+    <string name="app_logo_text">喵</string>
+    <string name="app_subtitle">TUTU 智能控制 · AI 手机控制中心</string>
+    <string name="app_footer">喵控 v1.0 · by ziv &amp; TuTu</string>
+
+    <!-- Connection -->
+    <string name="tutu_service">TUTU 服务</string>
+    <string name="status_connected">已连接 127.0.0.1:28200</string>
+    <string name="status_connecting">连接中…</string>
+    <string name="status_disconnected">未连接</string>
+    <string name="status_tutu_connected">TUTU 已连接</string>
+    <string name="btn_connect">连接</string>
+    <string name="btn_disconnect">断开</string>
+    <string name="connecting_to">正在连接 %1$s:%2$d …</string>
+    <string name="connected_to">已连接 %1$s:%2$d</string>
+    <string name="connection_failed">连接失败: %1$s</string>
+    <string name="disconnecting">断开连接中</string>
+    <string name="not_connected_cannot_send">未连接，无法发送</string>
+    <string name="send_failed">发送失败: %1$s</string>
+    <string name="request_timeout">请求超时: reqId=%1$s</string>
+    <string name="read_oom">读取时内存不足，跳过</string>
+    <string name="json_parse_failed">JSON 解析失败: %1$s</string>
+    <string name="read_error">读取错误: %1$s</string>
+    <string name="connection_lost">连接断开</string>
+    <string name="log_truncated">…[已截断，原始长度=%1$d]</string>
+
+    <!-- Auth -->
+    <string name="status_authenticating">认证中…</string>
+    <string name="auth_sending">发送认证握手…</string>
+    <string name="auth_success">认证通过: %1$s</string>
+    <string name="auth_failed">认证失败: %1$s</string>
+    <string name="auth_timeout">认证超时 (5s)</string>
+    <string name="auth_error">认证错误: %1$s</string>
+    <string name="auth_unexpected_response">认证响应异常</string>
+    <string name="auth_revoked">令牌已撤销: %1$s</string>
+
+    <!-- Permission Check Dialog -->
+    <string name="perm_dialog_title">运行 Skill 需要以下权限</string>
+    <string name="perm_overlay_name">悬浮窗权限</string>
+    <string name="perm_overlay_desc">运行时显示 Skill 状态悬浮窗</string>
+    <string name="perm_notification_name">通知权限</string>
+    <string name="perm_notification_desc">显示 Skill 运行状态通知</string>
+    <string name="perm_battery_name">忽略电池优化</string>
+    <string name="perm_battery_desc">防止后台任务被系统杀死</string>
+    <string name="perm_granted">已授权</string>
+    <string name="perm_go_enable">去开启 &gt;</string>
+    <string name="perm_btn_start">开始执行</string>
+
+    <!-- Overlay -->
+    <string name="overlay_control">悬浮窗控制</string>
+    <string name="overlay_permission_required">需要悬浮窗权限</string>
+    <string name="btn_grant_permission">授权</string>
+    <string name="btn_start_overlay">启动悬浮窗</string>
+    <string name="btn_stop_overlay">关闭悬浮窗</string>
+    <string name="quick_controls">快捷控制</string>
+
+    <!-- Overlay actions -->
+    <string name="action_home">主页</string>
+    <string name="action_back">返回</string>
+    <string name="action_recent">最近</string>
+    <string name="action_power">电源</string>
+    <string name="action_volume_up">音量+</string>
+    <string name="action_volume_down">音量-</string>
+    <string name="action_screenshot">截屏</string>
+    <string name="action_notifications">通知</string>
+    <string name="action_rotate">旋转</string>
+    <string name="action_wake_screen">亮屏</string>
+    <string name="action_ui_tree">UI 树</string>
+    <string name="action_device">设备</string>
+
+    <!-- Tab labels -->
+    <string name="tab_market">市场</string>
+    <string name="tab_my_skills">我的技能</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- Market -->
+    <string name="skill_market">技能市场</string>
+    <string name="skill_market_desc">浏览社区自动化技能</string>
+    <string name="skill_count">%1$d 个技能</string>
+
+    <!-- My Skills -->
+    <string name="my_skills_title">我的技能</string>
+    <string name="my_skills_coming_soon">即将推出</string>
+    <string name="my_skills_coming_soon_desc">在这里管理已安装的技能</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_about">关于</string>
+
+    <!-- Debug -->
+    <string name="debug_panel">API 调试面板</string>
+    <string name="debug_panel_desc">测试全部 70+ TUTU Socket 命令</string>
+    <string name="btn_execute">执行</string>
+    <string name="label_connected">已连接</string>
+    <string name="command_count">%1$d 条命令</string>
+    <string name="no_params_hint">该命令无参数，可直接执行。</string>
+    <string name="delay_label">延迟（秒）</string>
+    <string name="delay_hint">关闭对话框后将在指定延迟后发送命令</string>
+    <string name="btn_delayed_send">延迟发送</string>
+    <string name="btn_send">发送</string>
+    <string name="btn_cancel">取消</string>
+    <string name="label_log">日志</string>
+    <string name="log_count">%1$d 条</string>
+    <string name="btn_clear">清除</string>
+    <string name="screenshot_preview">截图预览</string>
+    <string name="btn_close">关闭</string>
+    <string name="delay_execution_log">延迟 %1$d 秒后执行: %2$s</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">喵控悬浮窗</string>
+    <string name="notification_channel_desc">喵控悬浮窗服务运行中</string>
+    <string name="notification_content">喵控悬浮窗运行中</string>
+    <string name="notification_stop">停止</string>
+
+    <!-- Command categories -->
+    <string name="cat_input_control">1. 输入控制</string>
+    <string name="cat_system_commands">2. 系统命令</string>
+    <string name="cat_screenshot_video">3. 截屏与录屏</string>
+    <string name="cat_ui_automation">4. UI 自动化</string>
+    <string name="cat_shell_file">5. Shell 与文件</string>
+    <string name="cat_app_management">6. 应用管理</string>
+    <string name="cat_device_control">7. 设备控制</string>
+    <string name="cat_communication_media">8. 通信与媒体</string>
+    <string name="cat_lock_security">9. 锁屏与安全</string>
+    <string name="cat_system_info">10. 系统信息</string>
+    <string name="cat_network_peripheral">11. 网络与外设</string>
+    <string name="cat_notification_media">12. 通知与媒体文件</string>
+    <string name="cat_service_control">13. 服务控制</string>
+
+    <!-- ADB Server Control -->
+    <string name="adb_server_control">服务控制</string>
+    <string name="adb_view_logs">日志</string>
+    <string name="adb_btn_pair">配对设备</string>
+    <string name="adb_btn_start">启动服务</string>
+    <string name="adb_btn_stop">停止</string>
+    <string name="adb_btn_restart">重启</string>
+    <string name="adb_notification_required">配对需要通知权限来输入配对码，请在系统设置中开启通知权限。</string>
+    <string name="adb_btn_retry">重试</string>
+
+    <!-- ADB Status -->
+    <string name="adb_status_idle">未启动</string>
+    <string name="adb_status_checking">搜索 ADB 中…</string>
+    <string name="adb_status_pair_searching">搜索配对服务中…</string>
+    <string name="adb_status_pair_input">等待输入配对码…</string>
+    <string name="adb_status_pair_working">配对中…</string>
+    <string name="adb_status_connecting">连接 ADB 中…</string>
+    <string name="adb_status_pushing">推送服务 (%1$d%%)</string>
+    <string name="adb_status_starting">启动服务中…</string>
+    <string name="adb_status_waiting">等待服务就绪…</string>
+    <string name="adb_status_running">服务运行中</string>
+    <string name="adb_status_error">出错</string>
+
+    <!-- ADB Pair Dialog -->
+    <string name="adb_pair_dialog_title">配对设备</string>
+    <string name="adb_pair_step1">1. 打开 设置 → 开发者选项 → 无线调试</string>
+    <string name="adb_pair_step2">2. 点击「使用配对码配对设备」</string>
+    <string name="adb_pair_step3">3. 在通知栏中输入显示的配对码</string>
+    <string name="adb_pair_note">开启无线调试时请保持本应用在前台。配对码将通过通知栏输入。</string>
+    <string name="adb_pair_notification_tip">提示：如果点击「使用配对码配对设备」后通知没有自动弹出，请手动下拉通知栏找到配对码输入通知。</string>
+    <string name="adb_pair_start">开始配对</string>
+
+    <!-- ADB Pairing Service Notifications -->
+    <string name="adb_pairing_channel_name">ADB 配对</string>
+    <string name="adb_pair_searching">搜索配对服务中…</string>
+    <string name="adb_pair_found">已发现配对服务</string>
+    <string name="adb_pair_input_code">输入配对码</string>
+    <string name="adb_pair_stop_search">停止</string>
+    <string name="adb_pair_working">配对中…</string>
+    <string name="adb_pair_succeed_title">配对成功</string>
+    <string name="adb_pair_succeed_text">设备已配对，正在自动部署服务。</string>
+    <string name="adb_pair_failed_title">配对失败</string>
+
+    <!-- ADB Errors -->
+    <string name="adb_error_connect">无法连接，请确认已开启无线调试。</string>
+    <string name="adb_error_pairing_code">配对码错误</string>
+    <string name="adb_error_key_store">密钥存储错误，请尝试清除应用数据。</string>
+    <string name="adb_error_not_paired">尚未配对，请先进行配对。</string>
+
+    <!-- ADB Log Dialog -->
+    <string name="adb_log_title">服务日志</string>
+    <string name="adb_log_empty">暂无日志</string>
+
+    <!-- ADB Setup Guide -->
+    <string name="adb_setup_title_first_time">需要初始设置</string>
+    <string name="adb_setup_title_wireless_off">无线调试未开启</string>
+    <string name="adb_setup_title_key_expired">需要重新配对</string>
+    <string name="adb_setup_msg_first_time">喵控需要通过无线调试来控制您的设备。首次使用需要进行一次简单的配对设置（约 30 秒）。</string>
+    <string name="adb_setup_msg_wireless_off">检测到无线调试已关闭（重启手机后需重新开启）。是否现在前往开启？</string>
+    <string name="adb_setup_msg_key_expired">之前的配对已失效，需要重新进行一次快速配对。</string>
+    <string name="adb_setup_btn_later">稍后</string>
+    <string name="adb_setup_btn_setup_now">立即设置</string>
+    <string name="adb_setup_btn_enable_now">前往开启</string>
+    <string name="adb_setup_btn_repair_now">重新配对</string>
+    <string name="adb_guide_title">设置引导</string>
+    <string name="adb_guide_step1_enable">1. 打开「无线调试」开关</string>
+    <string name="adb_guide_step2_pair">2. 点击「使用配对码配对设备」</string>
+    <string name="adb_guide_step3_code">3. 记住 6 位配对码，返回喵控在通知栏输入</string>
+    <string name="adb_guide_step_return">返回喵控即可自动连接</string>
+    <string name="adb_guide_btn_go_settings">前往设置</string>
+    <string name="adb_guide_note">系统将跳转到开发者选项，请向下滑动找到「无线调试」。</string>
+    <string name="adb_guide_notification_tip">如果配对码输入通知没有自动弹出，请手动下拉通知栏查找。</string>
+</resources>

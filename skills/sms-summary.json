@@ -1,0 +1,63 @@
+{
+  "name": "sms-summary",
+  "display_name": "短信快速摘要",
+  "display_name_en": "SMS Summary",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开短信应用，查看最近短信并生成智能摘要",
+  "description_en": "Open Messages app, read recent SMS and generate summary",
+  "icon": "mail",
+  "category": "social",
+  "tags": ["短信", "消息", "摘要", "通知"],
+  "estimated_time": "15s",
+  "estimated_tokens": 600,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "open_sms",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.mms" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "短信应用打开失败，请找到'短信'或'信息'应用打开。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "check_list",
+      "type": "ai_check",
+      "prompt": "查看短信列表：描述最近 5 条短信会话的发送者、内容摘要、时间，标注未读。"
+    },
+    {
+      "id": "read_latest",
+      "type": "ai_act",
+      "prompt": "点击最近收到的第一条短信（优先未读）查看详情。如果没有短信，调用 finished(content='短信列表为空')。",
+      "max_loops": 2
+    },
+    {
+      "id": "wait_detail",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 600
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "阅读短信对话详情，汇报：发送方、内容摘要、是否有需处理的重要信息（验证码、快递、账单等）、处理建议。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

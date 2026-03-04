@@ -1,0 +1,61 @@
+{
+  "name": "wechat-check-messages",
+  "display_name": "微信查看新消息",
+  "display_name_en": "Check WeChat Messages",
+  "version": "1.0.0",
+  "author": "miaohub-official",
+  "description": "打开微信，检查是否有未读消息，查看并汇报消息内容",
+  "description_en": "Open WeChat, check for unread messages and summarize",
+  "icon": "message-circle",
+  "category": "social",
+  "tags": ["微信", "消息", "社交", "未读"],
+  "estimated_time": "20s",
+  "estimated_tokens": 1200,
+  "requires": {
+    "apps": ["com.tencent.mm"]
+  },
+  "config": {},
+  "steps": [
+    {
+      "id": "open_wechat",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.tencent.mm" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "check_ready",
+      "type": "ai_check",
+      "prompt": "确认微信已打开。如果看到更新弹窗或广告弹窗，请指出需要关闭。如果已经在聊天列表页面，描述是否有未读消息（红点标记的联系人）。如果没有未读消息，直接说'当前没有未读消息'。",
+      "on_fail": "retry",
+      "max_retries": 2
+    },
+    {
+      "id": "find_and_click_unread",
+      "type": "ai_act",
+      "prompt": "如果聊天列表中有未读消息（红点标记），点击第一个有未读消息的联系人进入聊天界面。如果没有未读消息，调用 finished(content='当前微信没有未读消息')。",
+      "on_fail": "skip_with_message",
+      "fail_message": "未找到未读消息"
+    },
+    {
+      "id": "wait_chat",
+      "type": "wait",
+      "duration": 2000
+    },
+    {
+      "id": "read_messages",
+      "type": "ai_check",
+      "prompt": "阅读当前聊天界面的最近几条消息，用中文总结汇报消息内容。包括：发送者、消息内容摘要、大致时间。"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

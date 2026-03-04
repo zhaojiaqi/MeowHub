@@ -1,0 +1,60 @@
+{
+  "name": "set-alarm",
+  "display_name": "闹钟快捷设置",
+  "display_name_en": "Quick Set Alarm",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "快速打开时钟应用，设置一个闹钟",
+  "description_en": "Quickly open Clock app and set an alarm",
+  "icon": "alarm-clock",
+  "category": "daily",
+  "tags": ["闹钟", "时钟", "提醒", "日常"],
+  "estimated_time": "20s",
+  "estimated_tokens": 800,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_time",
+      "type": "prompt_user",
+      "fields": [
+        { "key": "alarm_time", "label": "设置几点的闹钟？", "type": "text", "placeholder": "7:30" },
+        { "key": "alarm_label", "label": "闹钟备注（可选）", "type": "text", "placeholder": "起床", "default": "" }
+      ]
+    },
+    {
+      "id": "open_clock",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.deskclock" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "时钟应用打开失败，请找到'时钟'或'闹钟'应用打开。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "set_alarm",
+      "type": "ai_act",
+      "prompt": "确保在闹钟页面，点击添加闹钟按钮(+号)，将时间设为 ${input.alarm_time}，设置好后确认保存。",
+      "max_loops": 5
+    },
+    {
+      "id": "verify",
+      "type": "ai_summary",
+      "prompt": "确认闹钟是否设置成功。查看列表中是否有 ${input.alarm_time} 的闹钟且已开启。汇报设置结果。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

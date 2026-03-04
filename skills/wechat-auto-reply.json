@@ -1,0 +1,185 @@
+{
+  "name": "wechat-auto-reply",
+  "display_name": "微信托管",
+  "display_name_en": "WeChat Auto Reply",
+  "version": "1.0.0",
+  "author": "miaohub-official",
+  "description": "托管微信消息，AI自动回复所有新消息，支持自定义托管时长和AI角色",
+  "description_en": "Auto-reply to all WeChat messages with customizable AI persona",
+  "icon": "message-circle",
+  "category": "social",
+  "tags": ["微信", "自动回复", "托管", "AI助手"],
+  "estimated_time": "30m",
+  "estimated_tokens": 5000,
+  "requires": { "apps": ["com.tencent.mm"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_settings",
+      "type": "prompt_user",
+      "title": "微信托管设置",
+      "fields": [
+        {
+          "key": "duration",
+          "label": "托管时长（分钟）",
+          "type": "select",
+          "options": ["5", "10", "15", "30", "60"],
+          "default": "30"
+        },
+        {
+          "key": "role",
+          "label": "AI回复角色",
+          "type": "select",
+          "options": ["专业秘书", "幽默朋友", "简洁助手", "模仿本人"],
+          "default": "专业秘书"
+        }
+      ],
+      "timeout": 60,
+      "timeout_action": "use_default"
+    },
+    {
+      "id": "init_reply_count",
+      "type": "set_var",
+      "var": "_reply_count",
+      "value": "0"
+    },
+    {
+      "id": "init_reply_log",
+      "type": "set_var",
+      "var": "_reply_log",
+      "op": "assign",
+      "value": []
+    },
+    {
+      "id": "open_wechat",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.tencent.mm" }
+    },
+    {
+      "id": "wait_wechat_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "check_wechat_state",
+      "type": "ai_check",
+      "prompt": "观察当前微信界面，判断状态：\n- 如果已经在微信主界面（能看到底部有微信/通讯录/发现/我等Tab），没有弹窗遮挡，回复包含「正常」\n- 如果有弹窗（更新提示、权限请求等）或不在微信主界面，回复包含「异常」",
+      "branches": [
+        { "match": "正常", "label": "微信主界面", "goto": "subscribe" },
+        { "match": "异常", "label": "需要处理", "goto": "handle_wechat_popup" }
+      ],
+      "default_branch": { "goto": "subscribe", "label": "默认继续" }
+    },
+    {
+      "id": "handle_wechat_popup",
+      "type": "ai_act",
+      "prompt": "当前微信界面有弹窗或不在主界面，请处理：\n1. 关闭所有弹窗（更新提示点「取消」或「稍后」、权限请求点「拒绝」等）\n2. 如果不在微信主界面，返回到微信主界面（点击底部「微信」Tab）\n处理完毕确认在微信主界面后完成。",
+      "max_loops": 3
+    },
+    {
+      "id": "subscribe",
+      "type": "api",
+      "action": "subscribe_events",
+      "params": { "package": "com.tencent.mm" }
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    },
+    {
+      "id": "wait_home",
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "id": "auto_reply_loop",
+      "type": "loop",
+      "label": "微信托管中",
+      "max_duration": 3600000,
+      "max_iterations": 200,
+      "loop_steps": [
+        {
+          "id": "wait_notification",
+          "type": "wait_for_event",
+          "event_types": ["notification_state_changed"],
+          "timeout": 120000,
+          "save_as": "notify"
+        },
+        {
+          "id": "check_notify",
+          "type": "condition",
+          "expression": "notify && notify.text",
+          "goto": "open_wechat_for_reply",
+          "skip_to": "wait_notification"
+        },
+        {
+          "id": "open_wechat_for_reply",
+          "type": "api",
+          "action": "open_app",
+          "params": { "app_name": "com.tencent.mm" }
+        },
+        {
+          "id": "wait_wechat_ready",
+          "type": "wait_until_changed",
+          "timeout": 3000,
+          "stable_ms": 500
+        },
+        {
+          "id": "reply_message",
+          "type": "ai_act",
+          "prompt": "你扮演「${input.role}」角色，帮我回复微信新消息。\n\n通知内容：${notify.text}\n\n根据当前截图判断进度，按顺序完成以下操作：\n\n1. 【找到联系人】如果在聊天列表，从通知识别联系人名字（格式「名字: 消息」），在列表中找到该联系人click进入\n2. 【阅读消息】进入聊天后，阅读对方最新消息，根据内容构思回复（3-8字，纯文字，不要emoji）\n3. 【点击输入框】click点击底部消息输入框激活\n4. 【输入回复】用type输入回复内容\n5. 【点击发送】输入文字后，输入框最右侧会出现绿色「发送」按钮，click点击发送\n6. 【确认完成】看截图确认：如果你发送的消息已出现在聊天气泡中（在右侧显示），说明发送成功，执行finished。如果输入框还有文字未发送，再次click发送按钮\n\n角色风格：\n- 专业秘书：对方说「在吗」回「在的，请说」；说「哈哈」回「有什么事吗」\n- 幽默朋友：对方说「在吗」回「在呢咋了」；说「哈哈」回「笑啥呢」\n- 简洁助手：「在」「收到」「好的」\n- 模仿本人：自然随意\n\n重要：根据对方消息内容生成针对性回复，不要千篇一律。每条消息只回复一次，确认发送成功后立刻finished。",
+          "max_loops": 8
+        },
+        {
+          "id": "count_reply",
+          "type": "set_var",
+          "var": "_reply_count",
+          "op": "increment",
+          "value": "1"
+        },
+        {
+          "id": "log_reply",
+          "type": "set_var",
+          "var": "_reply_log",
+          "op": "append",
+          "value": "第${_reply_count}条: ${notify.text}"
+        },
+        {
+          "id": "go_back",
+          "type": "api",
+          "action": "press_back"
+        },
+        {
+          "id": "back_home",
+          "type": "api",
+          "action": "press_home"
+        },
+        {
+          "id": "wait_settle",
+          "type": "wait",
+          "duration": 1000
+        },
+        {
+          "id": "clear_notify",
+          "type": "set_var",
+          "var": "notify",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "unsubscribe",
+      "type": "api",
+      "action": "unsubscribe_events"
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "微信托管任务已结束，托管时长设定为 ${input.duration} 分钟，AI角色为「${input.role}」。\n共自动回复了 ${_reply_count} 条消息。\n\n回复记录：\n${_reply_log}\n\n请生成一份简洁的托管报告：\n1. 第一行：概述托管时长和回复总数\n2. 列出每次回复的简要信息\n3. 最后一句总结托管情况",
+      "output": "result"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "screen-translate",
+  "display_name": "截屏翻译助手",
+  "display_name_en": "Screen Translate",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "截取当前屏幕内容，AI 识别文字并翻译成目标语言",
+  "description_en": "Screenshot current screen, OCR and translate text",
+  "icon": "languages",
+  "category": "tools",
+  "tags": ["翻译", "截图", "OCR", "语言", "工具"],
+  "estimated_time": "8s",
+  "estimated_tokens": 500,
+  "requires": {},
+  "config": {
+    "target_lang": {
+      "label": "目标语言",
+      "type": "select",
+      "options": ["中文", "英文", "日文", "韩文"],
+      "default": "中文"
+    }
+  },
+  "steps": [
+    {
+      "id": "translate",
+      "type": "ai_summary",
+      "prompt": "识别屏幕上所有文字并翻译成${config.target_lang}。\n输出：\n1.【原文】主要文字内容\n2.【翻译】翻译后内容\n3.【场景】什么界面",
+      "output": "result"
+    }
+  ]
+}

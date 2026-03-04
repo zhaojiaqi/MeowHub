@@ -1,0 +1,60 @@
+{
+  "name": "taobao-search",
+  "display_name": "淘宝比价搜索",
+  "display_name_en": "Taobao Price Search",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开淘宝搜索指定商品，浏览结果并汇报价格对比",
+  "description_en": "Open Taobao, search product and compare prices",
+  "icon": "shopping-cart",
+  "category": "shopping",
+  "tags": ["淘宝", "购物", "比价", "搜索"],
+  "estimated_time": "25s",
+  "estimated_tokens": 1000,
+  "requires": { "apps": ["com.taobao.taobao"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_keyword",
+      "type": "prompt_user",
+      "fields": [
+        { "key": "keyword", "label": "搜索什么商品？", "type": "text", "placeholder": "蓝牙耳机" }
+      ]
+    },
+    {
+      "id": "open_taobao",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.taobao.taobao" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "search_product",
+      "type": "ai_act",
+      "prompt": "在淘宝首页找到搜索框，输入'${input.keyword}'并搜索。如有弹窗先关闭。",
+      "max_loops": 4
+    },
+    {
+      "id": "wait_results",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "阅读搜索结果，汇报前 3-5 个商品的名称、价格、店铺名、销量，指出最便宜的和性价比推荐。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

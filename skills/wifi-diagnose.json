@@ -1,0 +1,38 @@
+{
+  "name": "wifi-diagnose",
+  "display_name": "WiFi 网络诊断",
+  "display_name_en": "WiFi Diagnostics",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "检查 WiFi 连接状态、信号强度和网络信息，生成网络诊断报告",
+  "description_en": "Check WiFi connection, signal strength and generate network report",
+  "icon": "wifi",
+  "category": "system",
+  "tags": ["WiFi", "网络", "诊断", "信号", "系统"],
+  "estimated_time": "10s",
+  "estimated_tokens": 400,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "get_network",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "wifi" },
+      "save_as": "network_info"
+    },
+    {
+      "id": "get_battery",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "battery" },
+      "save_as": "battery_info"
+    },
+    {
+      "id": "generate_report",
+      "type": "ai_summary",
+      "prompt": "分析网络信息生成诊断报告：\n\n${network_info}\n\n电池：${battery_info}\n\n请汇报：1.当前Wi-Fi名称和连接状态 2.信号强度 3.IP地址 4.附近可用Wi-Fi 5.运营商和移动网络 6.网络优化建议",
+      "output": "result"
+    }
+  ]
+}

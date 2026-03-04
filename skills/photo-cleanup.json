@@ -1,0 +1,70 @@
+{
+  "name": "photo-cleanup",
+  "display_name": "相册智能整理",
+  "display_name_en": "Photo Album Cleanup",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开相册，分析最近照片并给出清理建议",
+  "description_en": "Open gallery, analyze recent photos and suggest cleanup",
+  "icon": "image",
+  "category": "productivity",
+  "tags": ["相册", "照片", "清理", "整理", "效率"],
+  "estimated_time": "20s",
+  "estimated_tokens": 1000,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "get_storage",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "storage" },
+      "save_as": "storage_info"
+    },
+    {
+      "id": "open_gallery",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.gallery3d" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "相册打开失败，请找到'相册'、'图库'或'Photos'应用并打开。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "check_overview",
+      "type": "ai_check",
+      "prompt": "查看相册页面：大概有多少照片/视频、最近照片时间、照片分类、缩略图内容。"
+    },
+    {
+      "id": "scroll_photos",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "up", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_scroll",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 600
+    },
+    {
+      "id": "analyze",
+      "type": "ai_summary",
+      "prompt": "结合存储信息 ${storage_info}，生成相册整理建议：\n1.照片分类统计 2.重复/连拍照片 3.截图数量 4.存储占用 5.三条清理建议",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

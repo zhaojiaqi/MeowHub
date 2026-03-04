@@ -1,0 +1,60 @@
+{
+  "name": "eye-comfort",
+  "display_name": "护眼模式调节",
+  "display_name_en": "Eye Comfort Mode",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "智能调节屏幕亮度并开启护眼模式",
+  "description_en": "Adjust brightness and enable eye comfort mode",
+  "icon": "eye",
+  "category": "tools",
+  "tags": ["护眼", "亮度", "蓝光", "屏幕", "健康"],
+  "estimated_time": "15s",
+  "estimated_tokens": 500,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_mode",
+      "type": "prompt_user",
+      "fields": [
+        {
+          "key": "mode",
+          "label": "选择护眼场景",
+          "type": "select",
+          "options": ["夜间阅读（最低亮度）", "日常办公（适中亮度）", "户外使用（高亮度）"],
+          "default": "日常办公（适中亮度）"
+        }
+      ]
+    },
+    {
+      "id": "open_settings",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.settings" }
+    },
+    {
+      "id": "wait_settings",
+      "type": "wait_until_changed",
+      "timeout": 4000,
+      "stable_ms": 600
+    },
+    {
+      "id": "adjust_settings",
+      "type": "ai_act",
+      "prompt": "在设置中找到'显示'或'显示与亮度'进入，然后根据'${input.mode}'调节：\n- 夜间阅读：亮度最低，开启护眼/夜间模式\n- 日常办公：亮度中等，开启自动亮度\n- 户外使用：亮度最高\n找到亮度滑块和护眼模式开关操作。",
+      "max_loops": 5
+    },
+    {
+      "id": "verify",
+      "type": "ai_summary",
+      "prompt": "确认屏幕设置已调整。汇报当前亮度级别、护眼模式状态，并给出护眼小贴士。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

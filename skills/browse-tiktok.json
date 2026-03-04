@@ -1,0 +1,129 @@
+{
+  "name": "browse-tiktok",
+  "display_name": "刷抖音",
+  "display_name_en": "Browse TikTok",
+  "version": "3.4.0",
+  "author": "miaohub-official",
+  "description": "打开抖音，自动浏览指定条数的短视频并汇报内容摘要",
+  "description_en": "Open TikTok, browse specified number of videos and summarize",
+  "icon": "play-circle",
+  "category": "entertainment",
+  "tags": ["抖音", "视频", "娱乐", "短视频"],
+  "estimated_time": "45s",
+  "estimated_tokens": 1500,
+  "requires": { "apps": ["com.ss.android.ugc.aweme"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_count",
+      "type": "prompt_user",
+      "title": "刷抖音",
+      "fields": [
+        {
+          "key": "video_count",
+          "label": "要刷几条视频？",
+          "type": "select",
+          "options": ["2", "3", "5", "8", "10"],
+          "default": "3"
+        }
+      ],
+      "timeout": 30,
+      "timeout_action": "use_default"
+    },
+    {
+      "id": "init_counter",
+      "type": "set_var",
+      "var": "_i",
+      "value": "0"
+    },
+    {
+      "id": "init_total",
+      "type": "set_var",
+      "var": "_total",
+      "value": "${input.video_count}"
+    },
+    {
+      "id": "open_tiktok",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.ss.android.ugc.aweme" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "check_feed_state",
+      "type": "ai_check",
+      "prompt": "观察当前抖音界面，判断状态：\n- 如果当前已经在推荐视频流页面（能看到短视频在播放，底部有首页/朋友/消息/我等导航栏），没有任何弹窗遮挡，回复包含「正常」\n- 如果有弹窗（青少年模式、更新提示、权限请求、通知授权、广告等），或者不在推荐视频流页面，回复包含「异常」",
+      "branches": [
+        { "match": "正常", "label": "已在推荐流", "goto": "check_video" },
+        { "match": "异常", "label": "需要处理弹窗", "goto": "handle_popups" }
+      ],
+      "default_branch": { "goto": "check_video", "label": "默认继续" }
+    },
+    {
+      "id": "handle_popups",
+      "type": "ai_act",
+      "prompt": "当前抖音界面有弹窗或不在推荐页，请处理：\n1. 关闭所有弹窗（青少年模式点「我知道了」、更新提示点「取消/稍后」、权限请求点「拒绝/不允许」等）\n2. 如果不在首页推荐流，点击底部「首页」Tab\n\n处理完毕确认在推荐视频流页面后完成。",
+      "max_loops": 3
+    },
+    {
+      "id": "check_video",
+      "type": "ai_check",
+      "prompt": "观察当前正在播放的抖音视频，用一句话简要描述：创作者名称和视频主题内容。请直接用纯文字描述，不要使用 Action 格式。",
+      "save_as": "_last_video"
+    },
+    {
+      "id": "collect_video",
+      "type": "set_var",
+      "var": "_videos",
+      "op": "append",
+      "value": "${_last_video}"
+    },
+    {
+      "id": "count_up",
+      "type": "set_var",
+      "var": "_i",
+      "op": "increment",
+      "value": "1"
+    },
+    {
+      "id": "check_done",
+      "type": "condition",
+      "expression": "_i >= _total",
+      "goto": "summary"
+    },
+    {
+      "id": "swipe_next",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "down", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_next_video",
+      "type": "wait_until_changed",
+      "timeout": 4000,
+      "stable_ms": 800
+    },
+    {
+      "id": "loop_back",
+      "type": "condition",
+      "expression": "true",
+      "goto": "check_video"
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "请直接用纯文字汇报（不要使用 Action/Thought 格式）。\n\n本次刷抖音任务已完成，共浏览了 ${_i} 条视频，以下是每条视频的内容：\n${_videos}\n\n请根据以上信息生成执行报告，格式如下：\n- 第一行：任务概要（刷了几条视频）\n- 然后逐条列出每个视频的创作者和内容主题\n- 最后一句话总结本次推荐的整体风格和话题趋势",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

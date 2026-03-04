@@ -1,0 +1,69 @@
+{
+  "name": "meituan-food",
+  "display_name": "外卖美食推荐",
+  "display_name_en": "Food Delivery Recommend",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开美团外卖，浏览附近推荐美食并汇报优惠信息",
+  "description_en": "Open Meituan, browse nearby food and report deals",
+  "icon": "utensils",
+  "category": "shopping",
+  "tags": ["外卖", "美团", "美食", "点餐", "优惠"],
+  "estimated_time": "25s",
+  "estimated_tokens": 1000,
+  "requires": { "apps": ["com.sankuai.meituan.takeoutnew"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "open_meituan",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.sankuai.meituan.takeoutnew" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "美团外卖打开失败，尝试打开美团主应用(com.sankuai.meituan)并找到外卖入口。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "close_popup",
+      "type": "ai_act",
+      "prompt": "关闭弹窗、红包、广告，确保能看到外卖首页推荐内容。",
+      "max_loops": 2
+    },
+    {
+      "id": "check_recommend",
+      "type": "ai_check",
+      "prompt": "查看美团外卖首页，汇报：配送地址、推荐的 3-5 家店铺（名称、品类、评分、配送时间、人均价格）、优惠活动、用餐建议。"
+    },
+    {
+      "id": "scroll_more",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "up", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_scroll",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 600
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "补充 2-3 家新店铺信息，总结今天外卖推荐的整体情况和性价比最高的选择。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

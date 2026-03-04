@@ -1,0 +1,190 @@
+{
+  "name": "tiktok-drama-skip-ad",
+  "display_name": "短剧广告跳过器",
+  "display_name_en": "TikTok Drama Ad Skipper",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "请先在抖音打开短剧并播放到当前集，然后启动本技能。自动帮你看完广告倒计时、关闭广告并滑到下一集，无需手动操作",
+  "description_en": "Open a TikTok drama and play the current episode first, then start this skill. It auto-waits for ad countdowns, closes ads and swipes to next episode",
+  "icon": "fast-forward",
+  "category": "entertainment",
+  "tags": ["抖音", "短剧", "广告跳过", "自动化"],
+  "estimated_time": "120s",
+  "estimated_tokens": 2000,
+  "requires": { "apps": ["com.ss.android.ugc.aweme"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_count",
+      "type": "prompt_user",
+      "title": "短剧广告跳过器（请先打开抖音短剧播放页面）",
+      "fields": [
+        {
+          "key": "episode_count",
+          "label": "要自动跳几集？（确保当前已在短剧播放界面）",
+          "type": "select",
+          "options": ["2", "3", "5", "8", "10", "15", "20"],
+          "default": "5"
+        }
+      ],
+      "timeout": 30,
+      "timeout_action": "use_default"
+    },
+    {
+      "id": "init_counter",
+      "type": "set_var",
+      "var": "_i",
+      "value": "0"
+    },
+    {
+      "id": "init_total",
+      "type": "set_var",
+      "var": "_total",
+      "value": "${input.episode_count}"
+    },
+    {
+      "id": "init_ad_count",
+      "type": "set_var",
+      "var": "_ad_count",
+      "value": "0"
+    },
+    {
+      "id": "open_tiktok",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.ss.android.ugc.aweme" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 4000,
+      "stable_ms": 800
+    },
+    {
+      "id": "confirm_drama",
+      "type": "ai_check",
+      "prompt": "观察当前界面，判断是否在抖音短剧播放页面：\n- 如果当前是短剧/微短剧的全屏视频播放界面（能看到视频在播放，可能有集数信息、进度条、短剧标题等），回复包含「正常」\n- 如果不在短剧播放界面（比如在推荐首页、搜索页、个人页等），回复包含「异常」",
+      "branches": [
+        { "match": "正常", "label": "已在短剧播放页", "goto": "swipe_next" },
+        { "match": "异常", "label": "不在短剧页面", "goto": "end_error" }
+      ],
+      "default_branch": { "goto": "swipe_next", "label": "默认继续" }
+    },
+    {
+      "id": "end_error",
+      "type": "ai_summary",
+      "prompt": "请直接用纯文字回复（不要使用 Action/Thought 格式）。\n\n提示用户：当前未检测到抖音短剧播放界面，请先手动打开抖音并进入短剧播放页面，然后再启动本技能。",
+      "output": "result"
+    },
+    {
+      "id": "end_error_stop",
+      "type": "condition",
+      "expression": "true",
+      "goto": "go_home"
+    },
+    {
+      "id": "swipe_next",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "down", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_ad_appear",
+      "type": "wait",
+      "duration": 10000
+    },
+    {
+      "id": "check_ad",
+      "type": "ai_check",
+      "prompt": "仔细观察当前界面，判断广告状态。有两种广告形式需要识别：\n\n【类型A - 底部倒计时锁定广告】视频本身就是广告内容，底部有锁🔒图标和倒计时文字如「X秒后可继续上滑观看」「X秒后可上滑」，此时页面被锁定无法上滑，需要等倒计时结束。如果看到这种底部倒计时，回复包含「底部倒计时」\n\n【类型B - 弹窗/覆盖广告】屏幕上出现了弹窗广告或覆盖广告，有「跳过广告」「×」关闭按钮、倒计时数字如「5s」「3s」等，需要等倒计时结束后点击关闭。如果看到这种弹窗广告，回复包含「弹窗广告」\n\n【无广告】当前是正常的短剧视频播放画面，没有广告、没有倒计时文字，回复包含「无广告」",
+      "branches": [
+        { "match": "底部倒计时", "label": "底部倒计时广告", "goto": "wait_bottom_countdown" },
+        { "match": "弹窗广告", "label": "弹窗覆盖广告", "goto": "wait_popup_countdown" },
+        { "match": "无广告", "label": "无广告直接继续", "goto": "count_up" }
+      ],
+      "default_branch": { "goto": "count_up", "label": "默认无广告" }
+    },
+    {
+      "id": "wait_bottom_countdown",
+      "type": "wait",
+      "duration": 15000
+    },
+    {
+      "id": "count_ad_bottom",
+      "type": "set_var",
+      "var": "_ad_count",
+      "op": "increment",
+      "value": "1"
+    },
+    {
+      "id": "swipe_after_ad",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "down", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_after_bottom_ad",
+      "type": "wait",
+      "duration": 5000
+    },
+    {
+      "id": "goto_check_ad_again",
+      "type": "condition",
+      "expression": "true",
+      "goto": "check_ad"
+    },
+    {
+      "id": "wait_popup_countdown",
+      "type": "wait",
+      "duration": 20000
+    },
+    {
+      "id": "close_popup_ad",
+      "type": "ai_act",
+      "prompt": "当前短剧播放页面的弹窗广告倒计时应该已经结束了，请找到关闭广告的按钮并点击。常见的关闭按钮特征：\n- 右上角的「×」关闭按钮\n- 「跳过」「跳过广告」「关闭」按钮\n- 倒计时结束后出现的关闭图标\n\n点击关闭按钮后，确认广告已关闭、短剧视频恢复播放后完成。",
+      "max_loops": 3
+    },
+    {
+      "id": "count_ad_popup",
+      "type": "set_var",
+      "var": "_ad_count",
+      "op": "increment",
+      "value": "1"
+    },
+    {
+      "id": "wait_resume",
+      "type": "wait",
+      "duration": 5000
+    },
+    {
+      "id": "count_up",
+      "type": "set_var",
+      "var": "_i",
+      "op": "increment",
+      "value": "1"
+    },
+    {
+      "id": "check_done",
+      "type": "condition",
+      "expression": "_i >= _total",
+      "goto": "summary"
+    },
+    {
+      "id": "loop_back",
+      "type": "condition",
+      "expression": "true",
+      "goto": "swipe_next"
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "请直接用纯文字汇报（不要使用 Action/Thought 格式）。\n\n短剧广告跳过任务已完成：\n- 共跳过了 ${_i} 集短剧\n- 其中遇到并关闭了 ${_ad_count} 次广告\n\n请生成简洁的执行报告，说明完成了几集的跳转，处理了几次广告。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

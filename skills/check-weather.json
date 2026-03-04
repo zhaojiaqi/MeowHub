@@ -1,0 +1,116 @@
+{
+  "name": "check-weather",
+  "display_name": "查看天气",
+  "display_name_en": "Check Weather",
+  "version": "1.8.0",
+  "author": "miaohub-official",
+  "description": "查看今日天气预报，优先从桌面Widget读取，其次打开天气App，最后走浏览器搜索",
+  "description_en": "Check today's weather: prefer home screen widget, then weather app, fallback to browser",
+  "icon": "cloud-sun",
+  "category": "daily",
+  "tags": ["天气", "日常", "天气预报"],
+  "estimated_time": "15s",
+  "estimated_tokens": 800,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "list_apps",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "all_apps", "filter": "weather" },
+      "save_as": "installed_apps"
+    },
+    {
+      "id": "check_weather_app",
+      "type": "ai_check",
+      "prompt": "以下是手机中包名含 weather 的应用列表：\n${installed_apps}\n\n请按以下规则判断并回复：\n\n1. 如果有包名含 'widget' 的应用（如 com.motorola.timeweatherwidget），这是桌面天气小部件，无法直接打开，需要回桌面查看。回复'桌面天气Widget'。\n\n2. 如果没有 widget 类，但有其他天气App（包名含 weather 但不含 widget），回复'找到天气App'，并单独一行写出包名，格式为 pkg:完整包名。优先选厂商预装的（包名含 motorola/miui/huawei/oppo/vivo/samsung 等），其次选第三方。只选一个。\n\n3. 如果列表为空（0个应用），回复'没有天气App'。\n\n注意：如果同时有 widget 类和非 widget 类的天气App，优先回复'桌面天气Widget'（桌面小部件信息最直观）。",
+      "save_as": "weather_check_result",
+      "branch_mode": "keyword",
+      "branches": [
+        { "match": "桌面天气Widget", "goto": "go_home_for_widget", "label": "桌面Widget", "color": "#3b82f6" },
+        { "match": "找到天气App", "goto": "open_weather_app", "label": "天气App", "color": "#22c55e" }
+      ],
+      "default_branch": { "goto": "open_browser", "label": "无天气App", "color": "#f59e0b" }
+    },
+    {
+      "id": "go_home_for_widget",
+      "type": "api",
+      "action": "press_home"
+    },
+    {
+      "id": "wait_home",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 800
+    },
+    {
+      "id": "read_weather_from_widget",
+      "type": "ai_summary",
+      "prompt": "当前在手机桌面，桌面上应该有天气小部件（Widget）显示天气信息。请仔细查看屏幕截图，找到天气Widget并阅读其中的天气信息。\n\n请直接用纯文字汇报以下内容（不要使用 Action/Thought 格式，不要调用任何函数，直接输出文字）：\n- 当前城市\n- 当前温度\n- 天气状况（晴/多云/雨等）\n- 今日最高最低温度（如果可见）\n\n如果桌面上没有看到天气Widget，请说明未找到。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "open_weather_app",
+      "type": "ai_act",
+      "prompt": "上一步的分析结果如下：\n${weather_check_result}\n\n请从中提取包名（pkg:后面的内容），然后使用 open_app 打开该包名。严格使用提取到的包名，不要自行更换为其他App。",
+      "max_loops": 2
+    },
+    {
+      "id": "wait_weather_app",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "read_weather_from_app",
+      "type": "ai_summary",
+      "prompt": "阅读天气App屏幕上的天气信息。请直接用纯文字汇报（不要使用 Action/Thought 格式）：当前城市、当前温度、天气状况（晴/多云/雨等）、今日最高最低温度、未来几天趋势（如果可见）。用简洁的中文汇报。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "open_browser",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.android.browser" },
+      "on_fail": {
+        "strategy": "ai_recover",
+        "prompt": "浏览器打开失败，请尝试打开 Chrome 或任意可用浏览器。",
+        "max_attempts": 1
+      }
+    },
+    {
+      "id": "wait_browser",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "search_weather",
+      "type": "ai_act",
+      "prompt": "在浏览器中搜索'今天天气'。找到地址栏或搜索框，输入并搜索。",
+      "max_loops": 3
+    },
+    {
+      "id": "wait_result",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "read_weather_from_browser",
+      "type": "ai_summary",
+      "prompt": "阅读屏幕上的天气信息。请直接用纯文字汇报（不要使用 Action/Thought 格式）：当前城市、当前温度、天气状况（晴/多云/雨等）、今日最高最低温度、未来趋势（如果可见）。用简洁的中文汇报。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home",
+      "next_step": "end"
+    }
+  ]
+}

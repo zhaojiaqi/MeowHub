@@ -1,0 +1,64 @@
+{
+  "name": "browse-xiaohongshu",
+  "display_name": "小红书热门浏览",
+  "display_name_en": "Browse Xiaohongshu",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "打开小红书，浏览推荐页面的热门笔记并汇报内容",
+  "description_en": "Open Xiaohongshu and browse trending notes",
+  "icon": "book-open",
+  "category": "entertainment",
+  "tags": ["小红书", "笔记", "热门", "种草", "娱乐"],
+  "estimated_time": "25s",
+  "estimated_tokens": 1000,
+  "requires": { "apps": ["com.xingin.xhs"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "open_xhs",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.xingin.xhs" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "handle_popup",
+      "type": "ai_act",
+      "prompt": "如果有弹窗、广告或权限请求，请关闭。确保进入小红书推荐首页。如果不在推荐页，点击底部'首页'或'发现'。",
+      "max_loops": 2
+    },
+    {
+      "id": "check_note_1",
+      "type": "ai_check",
+      "prompt": "描述当前推荐页可见的 2-3 条笔记：标题/封面描述、作者名、点赞数。"
+    },
+    {
+      "id": "scroll_down",
+      "type": "api",
+      "action": "scroll",
+      "params": { "direction": "up", "x": 540, "y": 1200 }
+    },
+    {
+      "id": "wait_scroll",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 600
+    },
+    {
+      "id": "summary",
+      "type": "ai_summary",
+      "prompt": "综合已浏览的笔记，总结今日小红书推荐的整体风格和话题趋势，列出 3-5 条有代表性的笔记。",
+      "output": "result"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home"
+    }
+  ]
+}

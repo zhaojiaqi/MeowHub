@@ -1,0 +1,142 @@
+{
+  "name": "add-wechat-friend",
+  "display_name": "添加微信好友",
+  "display_name_en": "Add WeChat Friend",
+  "version": "1.3.0",
+  "author": "miaohub-official",
+  "description": "打开微信，通过微信号或手机号搜索并添加好友，支持自定义验证消息",
+  "description_en": "Open WeChat, search by ID or phone number and send friend request",
+  "icon": "user-plus",
+  "category": "social",
+  "tags": ["微信", "好友", "添加", "社交"],
+  "estimated_time": "30s",
+  "estimated_tokens": 1500,
+  "requires": { "apps": ["com.tencent.mm"] },
+  "config": {},
+  "steps": [
+    {
+      "id": "ask_info",
+      "type": "prompt_user",
+      "title": "添加微信好友",
+      "fields": [
+        { "key": "wechat_id", "label": "微信号 / 手机号", "type": "text", "placeholder": "输入微信号或手机号" },
+        { "key": "message", "label": "验证消息（可选）", "type": "text", "placeholder": "你好，我是...", "default": "你好，请通过一下好友验证" }
+      ],
+      "timeout": 120,
+      "timeout_action": "stop"
+    },
+    {
+      "id": "open_wechat",
+      "type": "api",
+      "action": "open_app",
+      "params": { "app_name": "com.tencent.mm" }
+    },
+    {
+      "id": "wait_load",
+      "type": "wait_until_changed",
+      "timeout": 6000,
+      "stable_ms": 1000
+    },
+    {
+      "id": "open_menu",
+      "type": "ai_act",
+      "prompt": "微信主页右上角有两个按钮：第一个是搜索（contentDescription='搜索'），第二个是更多功能（contentDescription='更多功能'，是一个Button）。点击第二个按钮'更多功能'打开下拉菜单。注意：微信的resourceId是混淆的会变化，不要依赖resourceId定位，用contentDescription或text定位。",
+      "max_loops": 2
+    },
+    {
+      "id": "wait_menu",
+      "type": "wait_until_changed",
+      "timeout": 2000,
+      "stable_ms": 300
+    },
+    {
+      "id": "click_add_friend",
+      "type": "ai_act",
+      "prompt": "弹出菜单中有4个选项：'发起群聊'、'添加朋友'、'扫一扫'、'收付款'。点击text='添加朋友'那一行。不要用resourceId定位（微信的resourceId会变化），用text文字匹配。",
+      "max_loops": 2
+    },
+    {
+      "id": "wait_add_page",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 500
+    },
+    {
+      "id": "type_search",
+      "type": "ai_act",
+      "prompt": "进入添加朋友页面后，顶部有一个搜索框（EditText）。点击搜索框使其获得焦点，然后输入'${input.wechat_id}'。输入完成后不要按回车或任何键盘按钮，等待界面下方出现搜索建议列表。",
+      "max_loops": 3
+    },
+    {
+      "id": "wait_search_hint",
+      "type": "wait_until_changed",
+      "timeout": 3000,
+      "stable_ms": 500
+    },
+    {
+      "id": "click_search_item",
+      "type": "ai_act",
+      "prompt": "输入完成后，搜索框下方会出现一个列表项，其中有一个TextView文字内容为'搜索:${input.wechat_id}'。直接点击这个'搜索:...'文字所在的行（它的父级RelativeLayout），即可发起搜索。不要尝试按键盘上的任何按钮，直接点击这条搜索建议。",
+      "max_loops": 2
+    },
+    {
+      "id": "wait_search",
+      "type": "wait_until_changed",
+      "timeout": 5000,
+      "stable_ms": 800
+    },
+    {
+      "id": "check_result",
+      "type": "ai_check",
+      "prompt": "查看当前页面，判断搜索结果：\n- 如果页面显示了用户资料且有'发消息'、'音视频通话'按钮（text='发消息'），说明对方已经是你的好友，回复中包含'已是好友'\n- 如果页面显示了用户资料且有'添加到通讯录'按钮，说明找到了用户但还不是好友，回复中包含'找到用户'\n- 如果提示'该用户不存在'或'被搜账号状态异常'或无搜索结果，回复中包含'未找到'\n- 如果出现验证码、滑块或安全验证，回复中包含'需要验证'",
+      "branch_mode": "keyword",
+      "branches": [
+        { "match": "已是好友", "goto": "report_already_friend", "label": "已是好友", "color": "#3b82f6" },
+        { "match": "找到用户", "goto": "send_request", "label": "找到用户", "color": "#22c55e" },
+        { "match": "需要验证", "goto": "report_verify", "label": "需要验证", "color": "#f59e0b" }
+      ],
+      "default_branch": { "goto": "report_fail", "label": "未找到", "color": "#ef4444" }
+    },
+    {
+      "id": "send_request",
+      "type": "ai_act",
+      "prompt": "当前在用户资料页，应该能看到'添加到通讯录'按钮。点击'添加到通讯录'按钮。在验证消息输入框中清空已有内容，输入'${input.message}'。最后点击'发送'按钮完成好友申请。",
+      "max_loops": 5,
+      "next_step": "report_success"
+    },
+    {
+      "id": "report_success",
+      "type": "ai_summary",
+      "prompt": "好友申请已发送。汇报：添加的微信号是 ${input.wechat_id}，验证消息为'${input.message}'。请等待对方通过验证。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "report_already_friend",
+      "type": "ai_summary",
+      "prompt": "${input.wechat_id} 已经是您的微信好友，无需重复添加。您可以直接在微信中与对方发消息。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "report_fail",
+      "type": "ai_summary",
+      "prompt": "未能找到微信号 ${input.wechat_id} 对应的用户。请确认微信号或手机号是否正确，或者对方可能设置了不允许搜索。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "report_verify",
+      "type": "ai_summary",
+      "prompt": "搜索过程中遇到安全验证（如滑块验证码），无法自动完成。请手动完成验证后重试。",
+      "output": "result",
+      "next_step": "go_home"
+    },
+    {
+      "id": "go_home",
+      "type": "api",
+      "action": "press_home",
+      "next_step": "end"
+    }
+  ]
+}

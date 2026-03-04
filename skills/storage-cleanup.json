@@ -1,0 +1,38 @@
+{
+  "name": "storage-cleanup",
+  "display_name": "存储清理建议",
+  "display_name_en": "Storage Cleanup Tips",
+  "version": "1.1.0",
+  "author": "miaohub-official",
+  "description": "检查手机存储空间使用情况，给出清理建议",
+  "description_en": "Check storage usage and provide cleanup suggestions",
+  "icon": "hard-drive",
+  "category": "system",
+  "tags": ["存储", "清理", "空间", "系统"],
+  "estimated_time": "8s",
+  "estimated_tokens": 400,
+  "requires": {},
+  "config": {},
+  "steps": [
+    {
+      "id": "get_storage",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "storage" },
+      "save_as": "storage_info"
+    },
+    {
+      "id": "get_apps",
+      "type": "api",
+      "action": "query_device_info",
+      "params": { "type": "apps" },
+      "save_as": "apps_info"
+    },
+    {
+      "id": "analyze",
+      "type": "ai_summary",
+      "prompt": "你是手机存储管理助手。\n\n存储：${storage_info}\n应用：${apps_info}\n\n请输出：1.存储使用概况 2.已安装应用数量 3.三条具体清理建议（卸载不常用App、清缓存等）",
+      "output": "result"
+    }
+  ]
+}
