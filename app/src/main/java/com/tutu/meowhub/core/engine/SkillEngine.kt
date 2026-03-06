@@ -25,9 +25,10 @@ import kotlinx.serialization.json.*
 class SkillEngine(
     private val bridge: SocketCommandBridge,
     private val apiClient: MeowHubApiClient,
-    private val aiProvider: AiProvider? = null,
+    private val aiProviderFactory: (() -> AiProvider?)? = null,
     @Volatile private var promptHandler: PromptHandler? = null
 ) {
+    private val aiProvider: AiProvider? get() = aiProviderFactory?.invoke()
     fun setPromptHandler(handler: PromptHandler?) {
         promptHandler = handler
     }
@@ -1013,12 +1014,13 @@ class SkillEngine(
                 true
             }
             "ai_recover" -> {
-                if (aiProvider != null) {
+                val ai = aiProvider
+                if (ai != null) {
                     log("STEP", "AI 恢复中...")
                     val screenshot = bridge.takeCompressedScreenshot()
                     val eventsCtx = buildEventsContext()
                     val prompt = "步骤 \"${step.id}\" 执行失败: ${error.message}。请观察当前屏幕，尝试修复操作。$eventsCtx"
-                    val aiText = aiProvider.analyze(prompt, screenshot)
+                    val aiText = ai.analyze(prompt, screenshot)
                     val parsed = parseAiResponse(aiText)
                     if (parsed.actionType != "finished") {
                         executeAiAction(parsed)

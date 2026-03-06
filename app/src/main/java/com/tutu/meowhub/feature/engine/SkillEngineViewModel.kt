@@ -42,6 +42,10 @@ class SkillEngineViewModel : ViewModel() {
      * @param activity 当前 Activity，用于 moveTaskToBack
      */
     fun runSkill(slug: String, activity: Activity? = null) {
+        if (!app.hasAiCapability) {
+            app.requestLogin("运行 Skill 需要 AI 能力，请先登录")
+            return
+        }
         activity?.moveTaskToBack(true)
         viewModelScope.launch {
             engine.runSkill(slug)
@@ -49,6 +53,10 @@ class SkillEngineViewModel : ViewModel() {
     }
 
     fun runLocalSkill(skill: MeowSkillDetail, activity: Activity? = null) {
+        if (!app.hasAiCapability) {
+            app.requestLogin("运行 Skill 需要 AI 能力，请先登录")
+            return
+        }
         activity?.moveTaskToBack(true)
         viewModelScope.launch {
             engine.runLocalSkill(skill)

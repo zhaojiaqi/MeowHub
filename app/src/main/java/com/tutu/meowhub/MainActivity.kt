@@ -9,8 +9,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.animation.Crossfade
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import com.tutu.meowhub.core.service.MeowOverlayService
+import com.tutu.meowhub.feature.account.AccountScreen
+import com.tutu.meowhub.feature.account.LoginScreen
 import com.tutu.meowhub.feature.debug.DebugScreen
 import com.tutu.meowhub.feature.navigation.MainScreen
 import com.tutu.meowhub.ui.theme.MeowHubTheme
@@ -55,16 +61,53 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private enum class AppScreen { MAIN, DEBUG, LOGIN, ACCOUNT }
+
 @Composable
 fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
-    var showDebug by remember { mutableStateOf(false) }
+    var currentScreen by remember { mutableStateOf(AppScreen.MAIN) }
+    var showLoginPrompt by remember { mutableStateOf(false) }
+    var loginPromptReason by remember { mutableStateOf("") }
 
-    if (showDebug) {
-        DebugScreen(onBack = { showDebug = false })
-    } else {
-        MainScreen(
-            onNavigateDebug = { showDebug = true },
-            onRequestOverlayPermission = onRequestOverlayPermission
+    LaunchedEffect(Unit) {
+        MeowApp.instance.loginRequiredEvent.collect { reason ->
+            loginPromptReason = reason
+            showLoginPrompt = true
+        }
+    }
+
+    if (showLoginPrompt) {
+        AlertDialog(
+            onDismissRequest = { showLoginPrompt = false },
+            title = { Text("需要登录") },
+            text = { Text(loginPromptReason) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLoginPrompt = false
+                    currentScreen = AppScreen.LOGIN
+                }) {
+                    Text("去登录")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLoginPrompt = false }) {
+                    Text("取消")
+                }
+            }
         )
+    }
+
+    Crossfade(targetState = currentScreen, label = "app_screen") { screen ->
+        when (screen) {
+            AppScreen.MAIN -> MainScreen(
+                onNavigateDebug = { currentScreen = AppScreen.DEBUG },
+                onNavigateLogin = { currentScreen = AppScreen.LOGIN },
+                onNavigateAccount = { currentScreen = AppScreen.ACCOUNT },
+                onRequestOverlayPermission = onRequestOverlayPermission
+            )
+            AppScreen.DEBUG -> DebugScreen(onBack = { currentScreen = AppScreen.MAIN })
+            AppScreen.LOGIN -> LoginScreen(onBack = { currentScreen = AppScreen.MAIN })
+            AppScreen.ACCOUNT -> AccountScreen(onBack = { currentScreen = AppScreen.MAIN })
+        }
     }
 }

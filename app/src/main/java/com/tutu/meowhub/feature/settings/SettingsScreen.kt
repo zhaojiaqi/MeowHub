@@ -6,8 +6,10 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,13 +35,19 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
+import com.tutu.meowhub.core.terminal.OpenClawGatewayManager
+import com.tutu.meowhub.core.terminal.OpenClawInstaller
+import com.tutu.meowhub.feature.account.AccountViewModel
+import com.tutu.meowhub.feature.terminal.TerminalViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     adbViewModel: AdbViewModel = viewModel(),
     onNavigateDebug: () -> Unit,
-    onRequestOverlayPermission: () -> Unit
+    onRequestOverlayPermission: () -> Unit,
+    onNavigateLogin: () -> Unit = {},
+    onNavigateAccount: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -109,6 +118,11 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            AccountCardEntry(
+                onNavigateLogin = onNavigateLogin,
+                onNavigateAccount = onNavigateAccount
+            )
+
             ServerControlCard(
                 state = adbState,
                 notificationDenied = notificationDenied || (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU),
@@ -126,6 +140,8 @@ fun SettingsScreen(
                 onStartOverlay = { MeowOverlayService.start(context) },
                 onStopOverlay = { MeowOverlayService.stop(context) }
             )
+
+            OpenClawSettingsCard()
 
             DebugEntryCard(onNavigateDebug = onNavigateDebug)
 
@@ -453,6 +469,134 @@ private fun OverlayControlCard(
 }
 
 @Composable
+private fun OpenClawSettingsCard() {
+    val terminalVm: TerminalViewModel = viewModel()
+    val openClawState by terminalVm.openClawInstaller.state.collectAsState()
+    val openClawMessage by terminalVm.openClawInstaller.statusMessage.collectAsState()
+    val gatewayState by terminalVm.gatewayManager.state.collectAsState()
+    val gatewayMessage by terminalVm.gatewayManager.statusMessage.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.SmartToy,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("OpenClaw AI Agent", fontWeight = FontWeight.SemiBold)
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            val statusText = when (openClawState) {
+                OpenClawInstaller.State.NOT_CHECKED -> "Not checked"
+                OpenClawInstaller.State.CHECKING -> "Checking..."
+                OpenClawInstaller.State.NOT_INSTALLED -> "Not installed"
+                OpenClawInstaller.State.INSTALLING_NODE -> "Installing Node.js..."
+                OpenClawInstaller.State.INSTALLING_OPENCLAW -> "Installing OpenClaw..."
+                OpenClawInstaller.State.CONFIGURING -> "Configuring..."
+                OpenClawInstaller.State.READY -> "Installed"
+                OpenClawInstaller.State.RUNNING -> "Running"
+                OpenClawInstaller.State.ERROR -> "Error"
+            }
+
+            val gatewayStatusText = when (gatewayState) {
+                OpenClawGatewayManager.GatewayState.STOPPED -> "Gateway stopped"
+                OpenClawGatewayManager.GatewayState.STARTING -> "Gateway starting..."
+                OpenClawGatewayManager.GatewayState.RUNNING -> "Gateway running :18789"
+                OpenClawGatewayManager.GatewayState.ERROR -> "Gateway error"
+            }
+
+            val statusColor = when {
+                gatewayState == OpenClawGatewayManager.GatewayState.RUNNING -> MaterialTheme.colorScheme.primary
+                openClawState == OpenClawInstaller.State.ERROR -> MaterialTheme.colorScheme.error
+                openClawState == OpenClawInstaller.State.READY -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    when {
+                        gatewayState == OpenClawGatewayManager.GatewayState.RUNNING -> Icons.Filled.CheckCircle
+                        openClawState == OpenClawInstaller.State.ERROR -> Icons.Filled.Error
+                        else -> Icons.Filled.Circle
+                    },
+                    contentDescription = null,
+                    tint = statusColor,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Column {
+                    Text(statusText, style = MaterialTheme.typography.bodySmall, color = statusColor)
+                    if (openClawState == OpenClawInstaller.State.READY || openClawState == OpenClawInstaller.State.RUNNING) {
+                        Text(gatewayStatusText, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                when (openClawState) {
+                    OpenClawInstaller.State.NOT_INSTALLED -> {
+                        FilledTonalButton(
+                            onClick = { terminalVm.installOpenClaw() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Install OpenClaw")
+                        }
+                    }
+                    OpenClawInstaller.State.READY -> {
+                        if (gatewayState != OpenClawGatewayManager.GatewayState.RUNNING) {
+                            FilledTonalButton(
+                                onClick = { terminalVm.startGateway() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Start Gateway")
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { terminalVm.stopGateway() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Stop Gateway")
+                            }
+                        }
+                    }
+                    OpenClawInstaller.State.INSTALLING_NODE,
+                    OpenClawInstaller.State.INSTALLING_OPENCLAW,
+                    OpenClawInstaller.State.CONFIGURING -> {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    else -> {
+                        OutlinedButton(
+                            onClick = { terminalVm.installOpenClaw() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Retry Install")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun DebugEntryCard(onNavigateDebug: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -479,6 +623,100 @@ private fun DebugEntryCard(onNavigateDebug: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountCardEntry(
+    onNavigateLogin: () -> Unit,
+    onNavigateAccount: () -> Unit
+) {
+    val accountVm: AccountViewModel = viewModel()
+    val isLoggedIn by accountVm.isLoggedIn.collectAsState()
+    val user by accountVm.currentUser.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        onClick = { if (isLoggedIn) onNavigateAccount() else onNavigateLogin() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isLoggedIn && user != null) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        user!!.avatarLetter,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        user!!.nickname.ifEmpty { "用户" },
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        user!!.displayContact,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "积分 ${user!!.credits}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "登录 / 注册",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        "登录后即可使用 AI 能力和图图智控",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
             Icon(
                 Icons.Filled.ChevronRight,
                 contentDescription = null,

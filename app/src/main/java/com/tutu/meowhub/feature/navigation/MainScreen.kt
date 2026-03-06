@@ -11,9 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Store
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -29,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.R
 import com.tutu.meowhub.feature.market.MarketScreen
 import com.tutu.meowhub.feature.myskills.MySkillsScreen
+import com.tutu.meowhub.feature.terminal.TerminalScreen
 import com.tutu.meowhub.feature.settings.AdbSetupGuideDialog
 import com.tutu.meowhub.feature.settings.AdbSetupPromptDialog
 import com.tutu.meowhub.feature.settings.AdbViewModel
@@ -40,6 +43,7 @@ enum class MainTab(
     val unselectedIcon: ImageVector
 ) {
     MARKET(R.string.tab_market, Icons.Filled.Store, Icons.Outlined.Store),
+    TERMINAL(R.string.tab_terminal, Icons.Filled.Terminal, Icons.Outlined.Terminal),
     MY_SKILLS(R.string.tab_my_skills, Icons.Filled.Person, Icons.Outlined.Person),
     SETTINGS(R.string.tab_settings, Icons.Filled.Settings, Icons.Outlined.Settings)
 }
@@ -47,6 +51,8 @@ enum class MainTab(
 @Composable
 fun MainScreen(
     onNavigateDebug: () -> Unit,
+    onNavigateLogin: () -> Unit = {},
+    onNavigateAccount: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit
 ) {
     val context = LocalContext.current
@@ -161,11 +167,14 @@ fun MainScreen(
         ) { tab ->
             when (tab) {
                 MainTab.MARKET -> MarketScreen()
+                MainTab.TERMINAL -> TerminalScreen()
                 MainTab.MY_SKILLS -> MySkillsScreen()
                 MainTab.SETTINGS -> SettingsScreen(
                     adbViewModel = adbViewModel,
                     onNavigateDebug = onNavigateDebug,
-                    onRequestOverlayPermission = onRequestOverlayPermission
+                    onRequestOverlayPermission = onRequestOverlayPermission,
+                    onNavigateLogin = onNavigateLogin,
+                    onNavigateAccount = onNavigateAccount
                 )
             }
         }
