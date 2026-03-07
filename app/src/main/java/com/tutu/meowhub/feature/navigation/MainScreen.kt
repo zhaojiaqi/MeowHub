@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Store
@@ -29,6 +31,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.R
+import com.tutu.meowhub.feature.chat.ChatScreen
 import com.tutu.meowhub.feature.market.MarketScreen
 import com.tutu.meowhub.feature.myskills.MySkillsScreen
 import com.tutu.meowhub.feature.terminal.TerminalScreen
@@ -42,6 +45,7 @@ enum class MainTab(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
+    CHAT(R.string.tab_chat, Icons.Filled.Chat, Icons.Outlined.Chat),
     MARKET(R.string.tab_market, Icons.Filled.Store, Icons.Outlined.Store),
     TERMINAL(R.string.tab_terminal, Icons.Filled.Terminal, Icons.Outlined.Terminal),
     MY_SKILLS(R.string.tab_my_skills, Icons.Filled.Person, Icons.Outlined.Person),
@@ -56,7 +60,7 @@ fun MainScreen(
     onRequestOverlayPermission: () -> Unit
 ) {
     val context = LocalContext.current
-    var currentTab by remember { mutableStateOf(MainTab.MARKET) }
+    var currentTab by remember { mutableStateOf(MainTab.CHAT) }
     val adbViewModel: AdbViewModel = viewModel()
     val autoResult by adbViewModel.autoConnectResult.collectAsState()
 
@@ -152,7 +156,14 @@ fun MainScreen(
                                 contentDescription = stringResource(tab.labelResId)
                             )
                         },
-                        label = { Text(stringResource(tab.labelResId)) }
+                        label = { Text(stringResource(tab.labelResId)) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
@@ -166,6 +177,7 @@ fun MainScreen(
             label = "main_tab"
         ) { tab ->
             when (tab) {
+                MainTab.CHAT -> ChatScreen()
                 MainTab.MARKET -> MarketScreen()
                 MainTab.TERMINAL -> TerminalScreen()
                 MainTab.MY_SKILLS -> MySkillsScreen()

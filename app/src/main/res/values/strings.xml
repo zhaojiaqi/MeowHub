@@ -71,10 +71,23 @@
     <string name="action_device">Device</string>
 
     <!-- Tab labels -->
+    <string name="tab_chat">Chat</string>
     <string name="tab_market">Market</string>
-    <string name="tab_terminal">Terminal</string>
+    <string name="tab_terminal">MeowClaw</string>
     <string name="tab_my_skills">My Skills</string>
     <string name="tab_settings">Settings</string>
+
+    <!-- Chat -->
+    <string name="chat_title">TuTu AI</string>
+    <string name="chat_new">New Chat</string>
+    <string name="chat_welcome_title">Hi, I\'m TuTu!</string>
+    <string name="chat_welcome_desc">Your AI phone assistant. Tell me what you need.</string>
+    <string name="chat_input_placeholder">Tell me what to do…</string>
+    <string name="chat_quick_screenshot">Screenshot</string>
+    <string name="chat_quick_wechat">WeChat</string>
+    <string name="chat_quick_tiktok">TikTok</string>
+    <string name="chat_quick_home">Home</string>
+    <string name="chat_quick_settings">Settings</string>
 
     <!-- Market -->
     <string name="skill_market">Skill Market</string>

@@ -12,8 +12,16 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -32,8 +40,12 @@ class MeowOverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var overlayView: ComposeView? = null
     private var resultView: ComposeView? = null
+    private var actionLabelView: ComposeView? = null
+    private var actionLabelParams: WindowManager.LayoutParams? = null
     private val lifecycleOwner = OverlayLifecycleOwner()
     private var engineObserverJob: Job? = null
+    private var actionLabelJob: Job? = null
+    private var overlayParams: WindowManager.LayoutParams? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -41,7 +53,9 @@ class MeowOverlayService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
         lifecycleOwner.onCreate()
         showOverlay()
+        showActionLabel()
         observeEngineFinish()
+        observeActionLabel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,7 +72,9 @@ class MeowOverlayService : Service() {
 
     override fun onDestroy() {
         engineObserverJob?.cancel()
+        actionLabelJob?.cancel()
         dismissResult()
+        removeActionLabel()
         removeOverlay()
         lifecycleOwner.onDestroy()
         super.onDestroy()
@@ -80,6 +96,7 @@ class MeowOverlayService : Service() {
             x = 0
             y = 200
         }
+        overlayParams = params
 
         val composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(lifecycleOwner)
@@ -88,9 +105,10 @@ class MeowOverlayService : Service() {
                 OverlayContent(
                     client = MeowApp.instance.tutuClient,
                     onDragUpdate = { dx, dy ->
-                        params.x += dx.toInt()
+                        params.x -= dx.toInt()
                         params.y += dy.toInt()
                         windowManager?.updateViewLayout(this, params)
+                        syncActionLabelPosition()
                     },
                     onClose = { stopSelf() }
                 )
@@ -106,6 +124,80 @@ class MeowOverlayService : Service() {
             try { windowManager?.removeView(it) } catch (_: Exception) {}
         }
         overlayView = null
+    }
+
+    private fun showActionLabel() {
+        val wm = windowManager ?: return
+        val lp = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.END
+            x = overlayParams?.x ?: 0
+            y = (overlayParams?.y ?: 200) + 60
+        }
+        actionLabelParams = lp
+
+        val view = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(lifecycleOwner)
+            setViewTreeSavedStateRegistryOwner(lifecycleOwner)
+            setContent {
+                val label by MeowApp.instance.chatActionLabel.collectAsState()
+                ActionLabelContent(label)
+            }
+        }
+
+        actionLabelView = view
+        wm.addView(view, lp)
+    }
+
+    @Composable
+    private fun ActionLabelContent(label: String?) {
+        if (label != null) {
+            val labelBg = androidx.compose.ui.graphics.Color(0xFF1E1E1E).copy(alpha = 0.8f)
+            androidx.compose.material3.Text(
+                text = label,
+                modifier = androidx.compose.ui.Modifier
+                    .widthIn(max = 160.dp)
+                    .background(color = labelBg, shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f),
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
+    private fun syncActionLabelPosition() {
+        val lp = actionLabelParams ?: return
+        val op = overlayParams ?: return
+        lp.x = op.x
+        lp.y = op.y + 60
+        actionLabelView?.let {
+            try { windowManager?.updateViewLayout(it, lp) } catch (_: Exception) {}
+        }
+    }
+
+    private fun removeActionLabel() {
+        actionLabelView?.let {
+            try { windowManager?.removeView(it) } catch (_: Exception) {}
+        }
+        actionLabelView = null
+    }
+
+    private fun observeActionLabel() {
+        actionLabelJob = CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
+            MeowApp.instance.chatActionLabel.collect {
+                syncActionLabelPosition()
+            }
+        }
     }
 
     private fun observeEngineFinish() {

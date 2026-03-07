@@ -71,9 +71,23 @@
     <string name="action_device">设备</string>
 
     <!-- Tab labels -->
+    <string name="tab_chat">对话</string>
     <string name="tab_market">市场</string>
+    <string name="tab_terminal">MeowClaw</string>
     <string name="tab_my_skills">我的技能</string>
     <string name="tab_settings">设置</string>
+
+    <!-- Chat -->
+    <string name="chat_title">图图 AI</string>
+    <string name="chat_new">新对话</string>
+    <string name="chat_welcome_title">你好，我是图图！</string>
+    <string name="chat_welcome_desc">你的手机 AI 助手，告诉我你需要什么。</string>
+    <string name="chat_input_placeholder">输入你想让手机做的事...</string>
+    <string name="chat_quick_screenshot">截图</string>
+    <string name="chat_quick_wechat">微信</string>
+    <string name="chat_quick_tiktok">抖音</string>
+    <string name="chat_quick_home">桌面</string>
+    <string name="chat_quick_settings">设置</string>
 
     <!-- Market -->
     <string name="skill_market">技能市场</string>

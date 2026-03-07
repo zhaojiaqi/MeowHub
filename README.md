@@ -99,6 +99,7 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 
 ### Key Features
 
+- **TUTU AI Chat** — Chat directly with TUTU AI in natural language. Ask questions (with web search), control your phone, or run skills — all from a single conversation. **5x faster** than OpenClaw-based conversation, with real-time streaming responses.
 - **Skill Engine** — A declarative JSON-based automation engine supporting 15+ step types: API calls, AI vision analysis, conditional branching, loops, user prompts, and more
 - **AI-Powered Actions** — Leverages LLM (Large Language Model) to understand screenshots, locate UI elements, and make intelligent decisions
 - **System-Level ADB** — Fully self-contained ADB implementation with mDNS discovery, TLS pairing (SPAKE2), and RSA key persistence — no PC required, zero detection risk
@@ -138,16 +139,16 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 ## Screenshots
 
 <p align="center">
+  <img src="docs/images/chat_ai_screen.png" alt="TUTU AI Chat" width="30%" />
   <img src="docs/assets/readme-market.png" alt="MeowHub Skill Marketplace" width="30%" />
   <img src="docs/assets/readme-terminal.png" alt="MeowHub Terminal" width="30%" />
-  <img src="docs/assets/readme-console.png" alt="MeowHub OpenClaw Console" width="30%" />
 </p>
 
 | View | Description |
 |------|-------------|
+| **TUTU AI Chat** | Chat directly with TUTU AI — ask questions, get real-time web answers, or command your phone with natural language. **5x faster** than OpenClaw-based conversation. |
 | Skill Marketplace | Browse and run built-in MeowHub skills to start AI-driven phone automation quickly |
 | Terminal | Inspect Gateway / OpenClaw runtime logs and debug startup or execution flow |
-| Console | Open the embedded OpenClaw web console inside the app and chat directly with TuTu / MeowClaw |
 
 ## Getting Started
 
@@ -282,6 +283,7 @@ app/src/main/java/com/tutu/meowhub/
 │   ├── service/      # Foreground services
 │   └── socket/       # TutuSocketClient (TCP)
 ├── feature/
+│   ├── chat/         # TUTU AI Chat module
 │   ├── debug/        # Debug panel
 │   ├── engine/       # Skill engine ViewModel
 │   ├── market/       # Skill marketplace UI

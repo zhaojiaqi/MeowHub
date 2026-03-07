@@ -15,8 +15,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
@@ -48,6 +51,13 @@ class MeowApp : Application() {
 
     private val _loginRequiredEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val loginRequiredEvent: SharedFlow<String> = _loginRequiredEvent.asSharedFlow()
+
+    private val _chatActionLabel = MutableStateFlow<String?>(null)
+    val chatActionLabel: StateFlow<String?> = _chatActionLabel.asStateFlow()
+
+    fun updateChatActionLabel(label: String?) {
+        _chatActionLabel.value = label
+    }
 
     fun requestLogin(reason: String = "需要登录后才能使用 AI 能力") {
         _loginRequiredEvent.tryEmit(reason)

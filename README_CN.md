@@ -99,6 +99,7 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 
 ### 核心特性
 
+- **TUTU AI 对话** — 直接用自然语言与图图 AI 对话。提问（支持联网搜索）、控制手机、运行技能，一个对话窗搞定一切。速度比 OpenClaw 对话**快 5 倍**，实时流式响应。
 - **Skill 引擎** — 基于 JSON 的声明式自动化引擎，支持 15+ 种步骤类型：API 调用、AI 视觉分析、条件分支、循环、用户交互等
 - **AI 驱动操作** — 利用大语言模型（LLM）理解屏幕截图、定位 UI 元素、做出智能决策
 - **系统底层 ADB** — 完全自包含的 ADB 实现，支持 mDNS 发现、TLS 配对（SPAKE2）、RSA 密钥持久化——无需电脑，无检测风险
@@ -138,16 +139,16 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 ## 截图展示
 
 <p align="center">
+  <img src="docs/images/chat_ai_screen.png" alt="TUTU AI 对话" width="30%" />
   <img src="docs/assets/readme-market.png" alt="MeowHub 技能市场" width="30%" />
   <img src="docs/assets/readme-terminal.png" alt="MeowHub 终端" width="30%" />
-  <img src="docs/assets/readme-console.png" alt="MeowHub OpenClaw 控制台" width="30%" />
 </p>
 
 | 界面 | 说明 |
 |------|------|
+| **TUTU AI 对话** | 直接与图图 AI 对话——提问、联网搜索实时信息、或用自然语言控制手机。速度比 OpenClaw 对话**快 5 倍**。 |
 | 技能市场 | 浏览和运行 MeowHub 内置技能，直接进入手机 AI 自动化工作流 |
 | 终端 | 查看 Gateway / OpenClaw 运行日志，调试启动状态与执行过程 |
-| 控制台 | 在 APP 内直接打开 OpenClaw Web 控制台，与 TuTu / MeowClaw 进行对话 |
 
 ## 快速开始
 
@@ -282,6 +283,7 @@ app/src/main/java/com/tutu/meowhub/
 │   ├── service/      # 前台服务
 │   └── socket/       # TutuSocketClient（TCP）
 ├── feature/
+│   ├── chat/         # TUTU AI 对话模块
 │   ├── debug/        # 调试面板
 │   ├── engine/       # Skill 引擎 ViewModel
 │   ├── market/       # 技能市场 UI

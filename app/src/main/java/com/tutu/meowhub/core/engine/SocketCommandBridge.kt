@@ -165,6 +165,7 @@ class SocketCommandBridge(
 
     fun startApp(appName: String) {
         val packageName = deviceCache.findPackageByName(appName)
+        Log.d(TAG, "startApp: appName='$appName' -> packageName='$packageName'")
         val cmd = buildJsonObject {
             put("type", "start_app")
             put("package", packageName)
