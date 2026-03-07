@@ -1,7 +1,9 @@
 package com.tutu.meowhub.feature.settings
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -470,11 +472,17 @@ private fun OverlayControlCard(
 
 @Composable
 private fun OpenClawSettingsCard() {
+    val context = LocalContext.current
     val terminalVm: TerminalViewModel = viewModel()
     val openClawState by terminalVm.openClawInstaller.state.collectAsState()
     val openClawMessage by terminalVm.openClawInstaller.statusMessage.collectAsState()
     val gatewayState by terminalVm.gatewayManager.state.collectAsState()
     val gatewayMessage by terminalVm.gatewayManager.statusMessage.collectAsState()
+    val isModelConfigured by terminalVm.isModelConfigured.collectAsState()
+
+    LaunchedEffect(Unit) {
+        terminalVm.refreshOpenClawStatus()
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -536,6 +544,62 @@ private fun OpenClawSettingsCard() {
                     if (openClawState == OpenClawInstaller.State.READY || openClawState == OpenClawInstaller.State.RUNNING) {
                         Text(gatewayStatusText, style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+
+            val showNeedConfigHint = !isModelConfigured &&
+                (openClawState == OpenClawInstaller.State.READY ||
+                 openClawState == OpenClawInstaller.State.RUNNING)
+
+            if (showNeedConfigHint) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "尚未配置 AI 模型",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Gateway 已启动，但需要配置 AI 模型才能使用。请打开 Web 控制台进行配置，或登录图图平台自动获取 AI 能力。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        FilledTonalButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("http://127.0.0.1:18789/openclaw"))
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("打开 Web 控制台配置")
+                        }
                     }
                 }
             }

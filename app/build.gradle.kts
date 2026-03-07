@@ -26,7 +26,7 @@ android {
     defaultConfig {
         applicationId = "com.tutu.meowhub"
         minSdk = 28
-        targetSdk = 36
+        targetSdk = 28
         versionCode = 1
         versionName = "1.0"
 
@@ -55,6 +55,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -92,6 +93,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(project(":terminal-view"))
+    implementation(project(":termux-shared"))
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

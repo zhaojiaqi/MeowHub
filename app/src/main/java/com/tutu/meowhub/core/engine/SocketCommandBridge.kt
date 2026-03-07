@@ -2,7 +2,6 @@ package com.tutu.meowhub.core.engine
 
 import android.util.Log
 import com.tutu.meowhub.core.socket.TutuSocketClient
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.*
@@ -96,7 +95,7 @@ class SocketCommandBridge(
             "notification_state_changed"
         )
     }
-    suspend fun tap(x: Int, y: Int) {
+    fun tap(x: Int, y: Int) {
         val (sw, sh) = deviceCache.screenSize.value
         val down = buildJsonObject {
             put("type", "touch")
@@ -107,7 +106,7 @@ class SocketCommandBridge(
             put("screenHeight", sh)
         }
         socketClient.sendFireAndForget(down)
-        delay(50)
+        Thread.sleep(50)
         val up = buildJsonObject {
             put("type", "touch")
             put("action", 1)
@@ -119,19 +118,17 @@ class SocketCommandBridge(
         socketClient.sendFireAndForget(up)
     }
 
-    suspend fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int = 300) {
-        val reqId = socketClient.nextReqId()
+    fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int = 300) {
         val cmd = buildJsonObject {
             put("type", "swipe")
-            put("reqId", reqId)
             put("x1", x1); put("y1", y1)
             put("x2", x2); put("y2", y2)
             put("durationMs", durationMs)
         }
-        socketClient.sendAndWait(cmd, 10000)
+        socketClient.sendFireAndForget(cmd)
     }
 
-    suspend fun scroll(direction: String) {
+    fun scroll(direction: String) {
         val (sw, sh) = deviceCache.screenSize.value
         val cx = sw / 2
         val (x1, y1, x2, y2) = when (direction) {
@@ -166,27 +163,13 @@ class SocketCommandBridge(
         })
     }
 
-    suspend fun startApp(appName: String): JsonObject? {
+    fun startApp(appName: String) {
         val packageName = deviceCache.findPackageByName(appName)
-        val reqId = socketClient.nextReqId()
         val cmd = buildJsonObject {
             put("type", "start_app")
-            put("reqId", reqId)
             put("package", packageName)
         }
-        val result = socketClient.sendAndWait(cmd, 10000)
-
-        // App 切换时用新包名重新订阅，保证事件源正确
-        if (eventCollector.isActive) {
-            unsubscribeAccessibilityEvents()
-            subscribeAccessibilityEvents(
-                packages = listOf(packageName),
-                eventTypes = subscribedEventTypes,
-                debounceMs = subscribedDebounceMs
-            )
-        }
-
-        return result
+        socketClient.sendFireAndForget(cmd)
     }
 
     /**
@@ -278,26 +261,22 @@ class SocketCommandBridge(
         }
     }
 
-    suspend fun clickByText(text: String, index: Int = 0): JsonObject? {
-        val reqId = socketClient.nextReqId()
+    fun clickByText(text: String, index: Int = 0) {
         val cmd = buildJsonObject {
             put("type", "click_by_text")
-            put("reqId", reqId)
             put("text", text)
             put("index", index)
         }
-        return socketClient.sendAndWait(cmd, 10000)
+        socketClient.sendFireAndForget(cmd)
     }
 
-    suspend fun clickById(id: String, index: Int = 0): JsonObject? {
-        val reqId = socketClient.nextReqId()
+    fun clickById(id: String, index: Int = 0) {
         val cmd = buildJsonObject {
             put("type", "click_by_id")
-            put("reqId", reqId)
             put("id", id)
             put("index", index)
         }
-        return socketClient.sendAndWait(cmd, 10000)
+        socketClient.sendFireAndForget(cmd)
     }
 
     suspend fun findElement(

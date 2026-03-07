@@ -72,6 +72,7 @@
 
     <!-- Tab labels -->
     <string name="tab_market">Market</string>
+    <string name="tab_terminal">Terminal</string>
     <string name="tab_my_skills">My Skills</string>
     <string name="tab_settings">Settings</string>
 
