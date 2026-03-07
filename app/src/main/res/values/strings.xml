@@ -31,7 +31,7 @@
     <string name="auth_sending">Sending auth handshake…</string>
     <string name="auth_success">Auth passed: %1$s</string>
     <string name="auth_failed">Auth failed: %1$s</string>
-    <string name="auth_timeout">Auth timeout (5s)</string>
+    <string name="auth_timeout">Auth timeout (20s)</string>
     <string name="auth_error">Auth error: %1$s</string>
     <string name="auth_unexpected_response">Unexpected auth response</string>
     <string name="auth_revoked">Token revoked: %1$s</string>
