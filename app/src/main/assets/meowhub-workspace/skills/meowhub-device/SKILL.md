@@ -1,6 +1,6 @@
 ---
 name: meowhub-device
-description: "Control your Android phone via MeowHub — screenshot, tap, swipe, type, open apps, execute shell commands. Use this skill whenever you need to interact with the phone's screen or perform device operations."
+description: "Control your Android phone via MeowHub — screenshot, tap, swipe, type, open apps, execute shell commands, make/accept/end calls, and control audio channels. Use this skill whenever you need to interact with the phone's screen or perform device operations."
 metadata:
   openclaw:
     always: true
@@ -56,6 +56,15 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/press_key -H 'Content-Typ
 
 # 检查连接
 $PREFIX/bin/curl -s http://127.0.0.1:18790/api/status
+
+# 接听来电
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/accept_call -H 'Content-Type: application/json' -d '{}'
+
+# 挂断/拒接电话
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/end_call -H 'Content-Type: application/json' -d '{}'
+
+# 拨打电话
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/make_call -H 'Content-Type: application/json' -d '{"number":"13800138000"}'
 ```
 
 ## Standard Operation Flow (2-3 步完成)
@@ -71,7 +80,7 @@ $PREFIX/bin/curl -s http://127.0.0.1:18790/api/status
 {"image": "<base64-jpeg>", "data": "<base64-jpeg>", "width": 1080, "height": 2340, "mimeType": "image/jpeg"}
 ```
 
-## Available Tools (16)
+## Available Tools (21)
 
 ### Connection
 
@@ -108,6 +117,16 @@ $PREFIX/bin/curl -s http://127.0.0.1:18790/api/status
 |------|----------|--------|---------------|
 | `open_app` | `/api/open_app` | POST | name (app name or package name) |
 | `execute_shell` | `/api/execute_shell` | POST | command |
+
+### Call & Audio
+
+| Tool | Endpoint | Method | Key Parameters |
+|------|----------|--------|---------------|
+| `accept_call` | `/api/accept_call` | POST | (none) |
+| `end_call` | `/api/end_call` | POST | (none) |
+| `make_call` | `/api/make_call` | POST | number |
+| `open_audio_channel` | `/api/open_audio_channel` | POST | mode: telephony(default)/voip |
+| `close_audio_channel` | `/api/close_audio_channel` | POST | (none) |
 
 ## curl Examples
 
@@ -183,6 +202,28 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/device_info \
 
 # List packages
 $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/list_packages \
+  -H 'Content-Type: application/json' -d '{}'
+
+# Accept incoming call
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/accept_call \
+  -H 'Content-Type: application/json' -d '{}'
+
+# End current call (or reject incoming call)
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/end_call \
+  -H 'Content-Type: application/json' -d '{}'
+
+# Make a phone call
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/make_call \
+  -H 'Content-Type: application/json' \
+  -d '{"number":"13800138000"}'
+
+# Open audio channel (telephony mode for regular calls, voip for VoIP/Android 12+)
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/open_audio_channel \
+  -H 'Content-Type: application/json' \
+  -d '{"mode":"telephony"}'
+
+# Close audio channel
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/close_audio_channel \
   -H 'Content-Type: application/json' -d '{}'
 ```
 

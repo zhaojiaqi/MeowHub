@@ -279,6 +279,47 @@ class SocketCommandBridge(
         socketClient.sendFireAndForget(cmd)
     }
 
+    fun acceptCall() {
+        socketClient.sendFireAndForget(buildJsonObject {
+            put("type", "accept_call")
+            put("reqId", socketClient.nextReqId())
+        })
+    }
+
+    fun endCall() {
+        socketClient.sendFireAndForget(buildJsonObject {
+            put("type", "end_call")
+            put("reqId", socketClient.nextReqId())
+        })
+    }
+
+    fun makeCall(number: String) {
+        socketClient.sendFireAndForget(buildJsonObject {
+            put("type", "make_call")
+            put("reqId", socketClient.nextReqId())
+            put("number", number)
+        })
+    }
+
+    suspend fun openAudioChannel(mode: String = "telephony"): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "open_audio_channel")
+            put("reqId", reqId)
+            put("mode", mode)
+        }
+        return socketClient.sendAndWait(cmd, 10000)
+    }
+
+    suspend fun closeAudioChannel(): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "close_audio_channel")
+            put("reqId", reqId)
+        }
+        return socketClient.sendAndWait(cmd, 5000)
+    }
+
     suspend fun findElement(
         text: String = "",
         id: String = "",

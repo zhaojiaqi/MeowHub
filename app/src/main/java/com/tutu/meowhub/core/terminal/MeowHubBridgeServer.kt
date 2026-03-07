@@ -139,6 +139,11 @@ class MeowHubBridgeServer(
                 "read_ui_text" -> requireConnected { handleReadUiText(body) }
                 "long_click" -> requireConnected { handleLongClick(body) }
                 "list_packages" -> requireConnected { handleListPackages() }
+                "accept_call" -> requireConnected { handleAcceptCall() }
+                "end_call" -> requireConnected { handleEndCall() }
+                "make_call" -> requireConnected { handleMakeCall(body) }
+                "open_audio_channel" -> requireConnected { handleOpenAudioChannel(body) }
+                "close_audio_channel" -> requireConnected { handleCloseAudioChannel() }
                 else -> 404 to buildJsonObject { put("error", "Not found: $endpoint") }
             }
         } catch (e: Exception) {
@@ -298,6 +303,33 @@ class MeowHubBridgeServer(
             }
             put("count", apps.size)
         }
+    }
+
+    private fun handleAcceptCall(): JsonObject {
+        bridge.acceptCall()
+        return buildJsonObject { put("ok", true); put("action", "accept_call") }
+    }
+
+    private fun handleEndCall(): JsonObject {
+        bridge.endCall()
+        return buildJsonObject { put("ok", true); put("action", "end_call") }
+    }
+
+    private fun handleMakeCall(body: JsonObject?): JsonObject {
+        val number = body?.get("number")?.jsonPrimitive?.contentOrNull ?: ""
+        bridge.makeCall(number)
+        return buildJsonObject { put("ok", true); put("action", "make_call"); put("number", number) }
+    }
+
+    private suspend fun handleOpenAudioChannel(body: JsonObject?): JsonObject {
+        val mode = body?.get("mode")?.jsonPrimitive?.contentOrNull ?: "telephony"
+        val resp = bridge.openAudioChannel(mode)
+        return resp ?: buildJsonObject { put("ok", true); put("action", "open_audio_channel"); put("mode", mode) }
+    }
+
+    private suspend fun handleCloseAudioChannel(): JsonObject {
+        val resp = bridge.closeAudioChannel()
+        return resp ?: buildJsonObject { put("ok", true); put("action", "close_audio_channel") }
     }
 
     private fun sendHttpResponse(client: Socket, code: Int, json: JsonObject) {

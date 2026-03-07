@@ -346,6 +346,22 @@ class SkillEngine(
                 log("EVENT", "unsubscribe_events()")
                 null
             }
+            "accept_call" -> { bridge.acceptCall(); null }
+            "end_call" -> { bridge.endCall(); null }
+            "make_call" -> {
+                val number = params?.get("number")?.jsonPrimitive?.contentOrNull ?: ""
+                bridge.makeCall(interpolateVars(number, context))
+                null
+            }
+            "open_audio_channel" -> {
+                val mode = params?.get("mode")?.jsonPrimitive?.contentOrNull ?: "telephony"
+                val resp = bridge.openAudioChannel(mode)
+                resp?.toString()
+            }
+            "close_audio_channel" -> {
+                bridge.closeAudioChannel()
+                null
+            }
             else -> {
                 log("API", "未知 action: $action")
                 null

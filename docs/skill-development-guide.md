@@ -117,6 +117,11 @@ Sends commands to the device via Socket bridge.
 | `read_ui_text` | `{ "filter": "", "exclude": "" }` | Read UI text content |
 | `subscribe_events` | `{ "package": "com.xxx" }` | Subscribe to accessibility events |
 | `unsubscribe_events` | — | Unsubscribe from events |
+| `accept_call` | — | Accept incoming ringing call |
+| `end_call` | — | End active call or reject incoming call |
+| `make_call` | `{ "number": "13800138000" }` | Dial a phone number |
+| `open_audio_channel` | `{ "mode": "telephony" }` | Open bidirectional audio channel (telephony/voip) |
+| `close_audio_channel` | — | Close the audio channel |
 
 ### `wait` — Delay
 
@@ -659,6 +664,11 @@ Skill 是一个定义自动化任务的 JSON 文件。最简示例：
 | `read_ui_text` | `{ "filter": "", "exclude": "" }` | 读取 UI 文本 |
 | `subscribe_events` | `{ "package": "com.xxx" }` | 订阅无障碍事件 |
 | `unsubscribe_events` | — | 取消事件订阅 |
+| `accept_call` | — | 接听来电 |
+| `end_call` | — | 挂断通话/拒接来电 |
+| `make_call` | `{ "number": "13800138000" }` | 拨打电话 |
+| `open_audio_channel` | `{ "mode": "telephony" }` | 开启双向音频通道（telephony/voip） |
+| `close_audio_channel` | — | 关闭音频通道 |
 
 ### `wait` — 延时等待
 

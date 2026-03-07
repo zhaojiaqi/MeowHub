@@ -260,6 +260,51 @@ const TOOLS = [
       type: 'object',
       properties: {}
     }
+  },
+  {
+    name: 'accept_call',
+    description: 'Accept the current incoming (ringing) call',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'end_call',
+    description: 'End the current active call, or reject an incoming call',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'make_call',
+    description: 'Dial a phone number to make an outgoing call',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        number: { type: 'string', description: 'Phone number to dial' }
+      },
+      required: ['number']
+    }
+  },
+  {
+    name: 'open_audio_channel',
+    description: 'Open a bidirectional audio channel for phone call audio injection/capture',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string', description: 'Audio mode', enum: ['telephony', 'voip'], default: 'telephony' }
+      }
+    }
+  },
+  {
+    name: 'close_audio_channel',
+    description: 'Close the audio channel opened by open_audio_channel',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
   }
 ];
 
@@ -347,6 +392,26 @@ async function handleToolCall(name, args) {
         filter: args.filter || '', exclude: args.exclude || ''
       });
       return [{ type: 'text', text: result.text || '' }];
+    }
+    case 'accept_call': {
+      await callBridge('accept_call', {});
+      return [{ type: 'text', text: 'Call accepted' }];
+    }
+    case 'end_call': {
+      await callBridge('end_call', {});
+      return [{ type: 'text', text: 'Call ended' }];
+    }
+    case 'make_call': {
+      await callBridge('make_call', { number: args.number });
+      return [{ type: 'text', text: `Dialing: ${args.number}` }];
+    }
+    case 'open_audio_channel': {
+      const result = await callBridge('open_audio_channel', { mode: args.mode || 'telephony' });
+      return [{ type: 'text', text: `Audio channel opened: ${JSON.stringify(result)}` }];
+    }
+    case 'close_audio_channel': {
+      await callBridge('close_audio_channel', {});
+      return [{ type: 'text', text: 'Audio channel closed' }];
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
