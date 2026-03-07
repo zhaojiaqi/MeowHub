@@ -55,6 +55,8 @@
     <string name="btn_start_overlay">启动悬浮窗</string>
     <string name="btn_stop_overlay">关闭悬浮窗</string>
     <string name="quick_controls">快捷控制</string>
+    <string name="instruction_hint">告诉我你想做什么…</string>
+    <string name="instruction_send">发送</string>
 
     <!-- Overlay actions -->
     <string name="action_home">主页</string>
