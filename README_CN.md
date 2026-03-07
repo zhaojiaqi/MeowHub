@@ -2,10 +2,31 @@
   <img src="docs/assets/logo_banner.png" alt="MeowHub" width="560" />
 </p>
 
-<h1 align="center">MeowHub（喵控）</h1>
+<p align="center">
+  <b>TUTU 智能控制 · AI 手机控制中心</b>
+</p>
+
+<p align="center">
+  <img src="https://github.com/openclaw.png?size=200" alt="OpenClaw" width="88" />
+  <br/>
+  <code>SUB-BRAND · OpenClaw / MeowClaw</code>
+  <br/>
+  <b>Built-in Full OpenClaw Runtime</b>
+  <br/>
+  <span>The lobster way 🦞</span>
+</p>
 
 <p align="center">
   <b>AI 手机分身 — 让每个人都能制作自己的手机 AI 自动化技能</b>
+</p>
+
+<p align="center">
+  <b>MeowHub × OpenClaw（The lobster way 🦞）</b><br/>
+  内置完整 OpenClaw，Android 端一键安装。
+</p>
+
+<p align="center">
+  不需要手动装 Termux，不需要在手机里 git clone，不需要自己跑 npm install。
 </p>
 
 <p align="center">
@@ -31,6 +52,18 @@
 ## MeowHub 是什么？
 
 MeowHub 是一款开源 Android 应用，可以把你的手机变成一个 **AI 驱动的自动化代理**。它是 **AI 与物理世界交互的手和脚** — 让 AI 能够真正「看」屏幕、「点」按钮、「滑」操作，完成你在手机上的一切任务。MeowHub 完全本地运行、开源可审计，并通过声明式 **Skill 引擎** 让你用 JSON 定义和分享自动化技能，无需写代码。
+
+### 内置 OpenClaw，不是让用户自己折腾安装
+
+MeowHub 现在已经把 **完整 OpenClaw 运行时** 直接内置进 APP。这不是“你自己先装 Termux，再跑几条命令，再想办法把 npm 装好”的方案，而是把 **完整的 MeowClaw / OpenClaw 能力** 作为 APP 的一部分直接交付给用户，做到 **一键安装、一站式可用**。
+
+- **内置完整 OpenClaw**：运行时、workspace、终端、控制台、Android Bridge 全部打包进 APP
+- **一键安装**：bootstrap、Node.js、npm、OpenClaw、workspace 资源、gateway 配置都由 APP 自动准备
+- **不需要手机端手动配环境**：不用自己 `git clone`、不用自己 `npm install`、不用临时补依赖
+- **弱网环境更稳定**：关键运行时资源已经预打包到 APK，避免首次启动时在线下载失败
+- **开箱即用的 AI 控制台**：终端和 OpenClaw 网页控制台都直接集成在 MeowHub 内
+
+这件事非常重要，因为手机端 AI Agent 最容易失败的地方，往往不是模型本身，而是安装链路：网络不稳定、镜像源异常、二进制缺失、Android linker 兼容问题、Shell 环境不一致。MeowHub 把这些复杂度都收敛进 APP 内部，目标就是提供一个 **真正可落地、可交付、可一键运行的 Android OpenClaw 方案**。
 
 **我们的愿景：** 让每个人都能创建和分享自己的手机 AI 分身技能 — 让 AI 真正拥有与物理世界交互的能力。
 
@@ -69,6 +102,9 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 - **Skill 引擎** — 基于 JSON 的声明式自动化引擎，支持 15+ 种步骤类型：API 调用、AI 视觉分析、条件分支、循环、用户交互等
 - **AI 驱动操作** — 利用大语言模型（LLM）理解屏幕截图、定位 UI 元素、做出智能决策
 - **系统底层 ADB** — 完全自包含的 ADB 实现，支持 mDNS 发现、TLS 配对（SPAKE2）、RSA 密钥持久化——无需电脑，无检测风险
+- **内置完整 OpenClaw** — OpenClaw 已作为 MeowHub 的一等能力直接集成，不再把复杂安装流程丢给用户
+- **MeowClaw 一键安装** — 预打包 bootstrap、Node.js、npm、OpenClaw runtime、workspace 技能与 gateway 配置
+- **内置终端 + 控制台** — 直接在 APP 内切换终端输出和 OpenClaw Web 控制台
 - **技能市场** — 浏览、搜索并一键运行社区创建的技能
 - **悬浮窗控制** — 浮动面板提供快捷操作和实时技能执行状态
 - **开放生态** — 用 JSON 创建自己的技能，贡献到社区，打造你的专属手机 AI 分身
@@ -101,11 +137,17 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 
 ## 截图展示
 
-<!-- TODO: 添加截图或 GIF 演示 -->
-
 <p align="center">
-  <i>截图即将上传...</i>
+  <img src="docs/assets/readme-market.png" alt="MeowHub 技能市场" width="30%" />
+  <img src="docs/assets/readme-terminal.png" alt="MeowHub 终端" width="30%" />
+  <img src="docs/assets/readme-console.png" alt="MeowHub OpenClaw 控制台" width="30%" />
 </p>
+
+| 界面 | 说明 |
+|------|------|
+| 技能市场 | 浏览和运行 MeowHub 内置技能，直接进入手机 AI 自动化工作流 |
+| 终端 | 查看 Gateway / OpenClaw 运行日志，调试启动状态与执行过程 |
+| 控制台 | 在 APP 内直接打开 OpenClaw Web 控制台，与 TuTu / MeowClaw 进行对话 |
 
 ## 快速开始
 
@@ -162,7 +204,11 @@ TUTU_APP_SECRET=你的应用密钥
 
 1. 在 Android 设备的开发者选项中开启 **无线调试**
 2. 打开 MeowHub，按照配对向导完成连接
-3. 连接成功后，可浏览技能市场或从"我的技能"运行技能
+3. 点击安装内置的 **MeowClaw / OpenClaw** 运行时
+4. 等待 MeowHub 自动完成 bootstrap、Node.js、npm、OpenClaw、workspace 与 gateway 的准备
+5. 安装完成后，可直接打开内置终端、控制台，或在“我的技能”与技能市场中开始使用
+
+> **这里一定要强调：** MeowHub 提供的是 **内置完整 OpenClaw 的一键安装方案**。用户不需要在手机上手动配置 Termux、不需要手动拉仓库、不需要自己解决 npm 安装失败或依赖缺失问题。
 
 ## Skill 生态
 

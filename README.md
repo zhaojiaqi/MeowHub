@@ -2,10 +2,31 @@
   <img src="docs/assets/logo_banner.png" alt="MeowHub" width="560" />
 </p>
 
-<h1 align="center">MeowHub (喵控)</h1>
+<p align="center">
+  <b>TUTU Smart Control · AI Phone Control Hub</b>
+</p>
+
+<p align="center">
+  <img src="https://github.com/openclaw.png?size=200" alt="OpenClaw" width="88" />
+  <br/>
+  <code>SUB-BRAND · OpenClaw / MeowClaw</code>
+  <br/>
+  <b>Built-in Full OpenClaw Runtime</b>
+  <br/>
+  <span>The lobster way 🦞</span>
+</p>
 
 <p align="center">
   <b>AI Phone Avatar — Create Your Own Phone Automation Skills with AI</b>
+</p>
+
+<p align="center">
+  <b>MeowHub × OpenClaw (The lobster way 🦞)</b><br/>
+  Built-in Full OpenClaw, One-Tap Install on Android.
+</p>
+
+<p align="center">
+  No manual Termux setup, no git clone on phone, no npm install, no fragile shell scripts.
 </p>
 
 <p align="center">
@@ -31,6 +52,18 @@
 ## What is MeowHub?
 
 MeowHub is an open-source Android app that turns your phone into an **AI-powered automation agent**. It serves as **the hands and feet of AI in the physical world** — enabling AI to truly "see" your screen, "tap" buttons, and "swipe" through apps to accomplish any task on your phone. MeowHub runs entirely on your device, is fully open-source, and uses a declarative **Skill Engine** so you can create and share automation skills in JSON — no coding required.
+
+### Built-in OpenClaw, Not a Separate DIY Install
+
+MeowHub now ships with a **fully integrated OpenClaw runtime** inside the app. This is not a "go install Termux, then run a few commands, then hope npm works" experience. Instead, MeowHub bundles the **complete OpenClaw-based MeowClaw stack** and can install it for users with **one tap**.
+
+- **Built-in full OpenClaw** — bundled runtime, workspace, terminal, console, and Android bridge
+- **One-tap install** — bootstrap, Node.js, npm, OpenClaw, workspace assets, and gateway are prepared automatically
+- **No phone-side dependency hell** — no manual `git clone`, `npm install`, or package chasing on-device
+- **More stable in bad network conditions** — key runtime assets are pre-packaged in the APK instead of fetched during first launch
+- **Ready-to-use AI console** — terminal + web console are embedded directly in MeowHub
+
+This matters because phone-side package installs are often the most fragile part of mobile AI-agent deployment: flaky network, broken mirrors, missing binaries, Android linker quirks, and inconsistent shell environments. MeowHub hides that complexity and delivers a **near out-of-box OpenClaw experience on Android**.
 
 **Our vision:** Everyone can create and share their own phone AI avatar skills — giving AI the power to interact with the physical world.
 
@@ -69,6 +102,9 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 - **Skill Engine** — A declarative JSON-based automation engine supporting 15+ step types: API calls, AI vision analysis, conditional branching, loops, user prompts, and more
 - **AI-Powered Actions** — Leverages LLM (Large Language Model) to understand screenshots, locate UI elements, and make intelligent decisions
 - **System-Level ADB** — Fully self-contained ADB implementation with mDNS discovery, TLS pairing (SPAKE2), and RSA key persistence — no PC required, zero detection risk
+- **Built-in Full OpenClaw** — OpenClaw is embedded as a first-class capability inside MeowHub, not left to users as a separate manual install task
+- **One-Tap MeowClaw Installation** — Pre-bundled bootstrap, Node.js, npm, OpenClaw runtime, workspace skills, and gateway configuration
+- **Embedded Terminal + Console** — Switch between terminal output and OpenClaw web console directly inside the app
 - **Skill Marketplace** — Browse, search, and run community-created skills with one tap
 - **Overlay Control** — Floating panel for quick actions and real-time skill execution status
 - **Open Ecosystem** — Create your own skills in JSON, contribute to the community, and build your personal phone AI avatar
@@ -101,11 +137,17 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 
 ## Screenshots
 
-<!-- TODO: Add screenshots or GIF demos -->
-
 <p align="center">
-  <i>Screenshots coming soon...</i>
+  <img src="docs/assets/readme-market.png" alt="MeowHub Skill Marketplace" width="30%" />
+  <img src="docs/assets/readme-terminal.png" alt="MeowHub Terminal" width="30%" />
+  <img src="docs/assets/readme-console.png" alt="MeowHub OpenClaw Console" width="30%" />
 </p>
+
+| View | Description |
+|------|-------------|
+| Skill Marketplace | Browse and run built-in MeowHub skills to start AI-driven phone automation quickly |
+| Terminal | Inspect Gateway / OpenClaw runtime logs and debug startup or execution flow |
+| Console | Open the embedded OpenClaw web console inside the app and chat directly with TuTu / MeowClaw |
 
 ## Getting Started
 
@@ -162,7 +204,11 @@ TUTU_APP_SECRET=your_app_secret_here
 
 1. Enable **Wireless Debugging** in Developer Settings on your Android device
 2. Open MeowHub and follow the pairing wizard
-3. Once connected, browse the Skill Marketplace or run a skill from "My Skills"
+3. Tap to install the built-in **MeowClaw / OpenClaw** runtime
+4. Wait for MeowHub to automatically prepare the bundled bootstrap, Node.js, npm, OpenClaw, workspace, and gateway
+5. Once connected, open the embedded terminal or console, or browse the Skill Marketplace and run a skill from "My Skills"
+
+> **Why we emphasize this so much:** the app includes a **complete built-in OpenClaw distribution** designed for Android deployment. Users do **not** need to manually set up Termux, clone repositories, install Node.js, or troubleshoot npm dependency failures on the phone.
 
 ## Skill Ecosystem
 
