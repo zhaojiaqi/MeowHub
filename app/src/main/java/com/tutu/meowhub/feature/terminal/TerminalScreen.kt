@@ -6,6 +6,7 @@ import android.content.Context
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -444,12 +445,37 @@ private fun ConsoleWebView(
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var webViewKey by remember { mutableIntStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    LaunchedEffect(webViewKey) {
+        isLoading = true
+        loadError = null
+        delay(15_000)
+        if (isLoading && loadError == null) {
+            android.util.Log.w("ConsoleWebView", "Loading timeout after 15s, url=$url")
+            val wv = webView
+            if (wv != null) {
+                val wvUrl = wv.url
+                val progress = wv.progress
+                android.util.Log.w("ConsoleWebView",
+                    "Timeout state: webview.url=$wvUrl progress=$progress width=${wv.width} height=${wv.height}")
+            }
+            isLoading = false
+            loadError = "加载超时（15秒），请检查 Gateway 是否正常运行"
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
         key(webViewKey) {
             AndroidView(
                 factory = { ctx ->
                     WebView(ctx).apply {
+                        layoutParams = android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.databaseEnabled = true
@@ -462,7 +488,8 @@ private fun ConsoleWebView(
                             android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         settings.allowFileAccess = true
                         settings.allowContentAccess = true
-                        settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+                        settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                        settings.mediaPlaybackRequiresUserGesture = false
                         settings.userAgentString = settings.userAgentString + " MeowHub/1.0"
 
                         webViewClient = object : WebViewClient() {
@@ -471,20 +498,15 @@ private fun ConsoleWebView(
                                 startUrl: String?,
                                 favicon: android.graphics.Bitmap?
                             ) {
-                                android.util.Log.i(
-                                    "ConsoleWebView",
-                                    "onPageStarted: $startUrl"
-                                )
+                                android.util.Log.i("ConsoleWebView", "onPageStarted: $startUrl")
                             }
 
                             override fun onPageFinished(
                                 view: WebView?,
                                 finishedUrl: String?
                             ) {
-                                android.util.Log.i(
-                                    "ConsoleWebView",
-                                    "onPageFinished: $finishedUrl"
-                                )
+                                android.util.Log.i("ConsoleWebView",
+                                    "onPageFinished: $finishedUrl w=${view?.width} h=${view?.height}")
                                 isLoading = false
                                 loadError = null
                             }
@@ -497,10 +519,8 @@ private fun ConsoleWebView(
                                 val reqUrl = request?.url
                                 val code = error?.errorCode
                                 val desc = error?.description
-                                android.util.Log.e(
-                                    "ConsoleWebView",
-                                    "onReceivedError: url=$reqUrl code=$code desc=$desc isMainFrame=${request?.isForMainFrame}"
-                                )
+                                android.util.Log.e("ConsoleWebView",
+                                    "onReceivedError: url=$reqUrl code=$code desc=$desc isMainFrame=${request?.isForMainFrame}")
                                 if (request?.isForMainFrame == true) {
                                     isLoading = false
                                     loadError = "加载失败 (code=$code): $desc"
@@ -512,14 +532,11 @@ private fun ConsoleWebView(
                                 request: android.webkit.WebResourceRequest?,
                                 errorResponse: android.webkit.WebResourceResponse?
                             ) {
-                                android.util.Log.e(
-                                    "ConsoleWebView",
-                                    "onReceivedHttpError: ${request?.url} status=${errorResponse?.statusCode} isMainFrame=${request?.isForMainFrame}"
-                                )
+                                android.util.Log.e("ConsoleWebView",
+                                    "onReceivedHttpError: ${request?.url} status=${errorResponse?.statusCode} isMainFrame=${request?.isForMainFrame}")
                                 if (request?.isForMainFrame == true) {
                                     isLoading = false
-                                    loadError =
-                                        "HTTP ${errorResponse?.statusCode}: ${errorResponse?.reasonPhrase}"
+                                    loadError = "HTTP ${errorResponse?.statusCode}: ${errorResponse?.reasonPhrase}"
                                 }
                             }
 
@@ -528,10 +545,8 @@ private fun ConsoleWebView(
                                 handler: android.webkit.SslErrorHandler?,
                                 error: android.net.http.SslError?
                             ) {
-                                android.util.Log.e(
-                                    "ConsoleWebView",
-                                    "onReceivedSslError: ${error?.url} type=${error?.primaryError}"
-                                )
+                                android.util.Log.e("ConsoleWebView",
+                                    "onReceivedSslError: ${error?.url} type=${error?.primaryError}")
                                 handler?.cancel()
                                 isLoading = false
                                 loadError = "SSL 错误: ${error?.primaryError}"
@@ -541,10 +556,8 @@ private fun ConsoleWebView(
                                 view: WebView?,
                                 request: android.webkit.WebResourceRequest?
                             ): Boolean {
-                                android.util.Log.d(
-                                    "ConsoleWebView",
-                                    "shouldOverrideUrlLoading: ${request?.url}"
-                                )
+                                android.util.Log.d("ConsoleWebView",
+                                    "shouldOverrideUrlLoading: ${request?.url}")
                                 return false
                             }
 
@@ -556,10 +569,8 @@ private fun ConsoleWebView(
                                 val priority =
                                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
                                         detail?.rendererPriorityAtExit() else -1
-                                android.util.Log.e(
-                                    "ConsoleWebView",
-                                    "onRenderProcessGone: crashed=$crashed priority=$priority"
-                                )
+                                android.util.Log.e("ConsoleWebView",
+                                    "onRenderProcessGone: crashed=$crashed priority=$priority")
                                 view?.destroy()
                                 webView = null
                                 isLoading = false
@@ -578,46 +589,36 @@ private fun ConsoleWebView(
                                 val line = consoleMessage?.lineNumber()
                                 when (level) {
                                     android.webkit.ConsoleMessage.MessageLevel.ERROR ->
-                                        android.util.Log.e(
-                                            "ConsoleWebView",
-                                            "JS ERROR: $msg [$src:$line]"
-                                        )
-
+                                        android.util.Log.e("ConsoleWebView", "JS ERROR: $msg [$src:$line]")
                                     android.webkit.ConsoleMessage.MessageLevel.WARNING ->
-                                        android.util.Log.w(
-                                            "ConsoleWebView",
-                                            "JS WARN: $msg [$src:$line]"
-                                        )
-
+                                        android.util.Log.w("ConsoleWebView", "JS WARN: $msg [$src:$line]")
                                     else ->
-                                        android.util.Log.d(
-                                            "ConsoleWebView",
-                                            "JS: $msg [$src:$line]"
-                                        )
+                                        android.util.Log.d("ConsoleWebView", "JS: $msg [$src:$line]")
                                 }
                                 return true
                             }
 
-                            override fun onProgressChanged(
-                                view: WebView?,
-                                newProgress: Int
-                            ) {
-                                android.util.Log.d(
-                                    "ConsoleWebView",
-                                    "loading progress: $newProgress%"
-                                )
+                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                android.util.Log.d("ConsoleWebView", "loading progress: $newProgress%")
                             }
                         }
 
                         WebView.setWebContentsDebuggingEnabled(true)
-                        setBackgroundColor(android.graphics.Color.parseColor("#0A0E14"))
-                        android.util.Log.i("ConsoleWebView", "loadUrl: $url")
-                        loadUrl(url)
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
+                        android.util.Log.i("ConsoleWebView",
+                            "loadUrl: $url | webview created, size will be measured on layout")
+
+                        post { loadUrl(url) }
+
                         webView = this
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
-                update = { }
+                update = { view ->
+                    android.util.Log.d("ConsoleWebView",
+                        "AndroidView update: w=${view.width} h=${view.height} url=${view.url}")
+                }
             )
         }
 
@@ -666,6 +667,13 @@ private fun ConsoleWebView(
                         loadError!!,
                         color = MeowTextDim,
                         fontSize = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "URL: $url",
+                        color = MeowTextDim.copy(alpha = 0.5f),
+                        fontSize = 11.sp,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(20.dp))
