@@ -52,6 +52,9 @@ class MeowApp : Application() {
     private val _loginRequiredEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val loginRequiredEvent: SharedFlow<String> = _loginRequiredEvent.asSharedFlow()
 
+    private val _socketAuthRequiredEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val socketAuthRequiredEvent: SharedFlow<Unit> = _socketAuthRequiredEvent.asSharedFlow()
+
     private val _chatActionLabel = MutableStateFlow<String?>(null)
     val chatActionLabel: StateFlow<String?> = _chatActionLabel.asStateFlow()
 
@@ -134,6 +137,7 @@ class MeowApp : Application() {
                 }
             } else {
                 Log.d(TAG, "No secrets configured and not logged in, skipping connect")
+                _socketAuthRequiredEvent.tryEmit(Unit)
             }
         }
     }

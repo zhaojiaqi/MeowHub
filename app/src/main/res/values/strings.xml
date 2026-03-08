@@ -35,6 +35,10 @@
     <string name="auth_error">Auth error: %1$s</string>
     <string name="auth_unexpected_response">Unexpected auth response</string>
     <string name="auth_revoked">Token revoked: %1$s</string>
+    <string name="socket_auth_required_title">TUTU API authorization requires login</string>
+    <string name="socket_auth_required_message">When not logged in, you can only use basic chat and cannot control the device. You may continue with chat only, or log in to complete TUTU API authorization and control the device.</string>
+    <string name="btn_chat_only">Chat only</string>
+    <string name="btn_go_login">Log in</string>
 
     <!-- Permission Check Dialog -->
     <string name="perm_dialog_title">Permissions required to run Skill</string>
@@ -403,6 +407,14 @@
     <string name="adb_guide_btn_go_settings">Go to Settings</string>
     <string name="adb_guide_note">The system will jump to Developer Options. Please scroll down to find \"Wireless debugging\".</string>
     <string name="adb_guide_notification_tip">If the pairing code input notification doesn\'t pop up automatically, please swipe down the notification shade to find it.</string>
+    <string name="adb_guide_btn_request_notification">Enable notification permission</string>
+
+    <!-- ADB Setup Pre-Guide (before requesting permission) -->
+    <string name="adb_pre_guide_title">Before You Start</string>
+    <string name="adb_pre_guide_step1_notification">1. Make sure notification permission is enabled. Otherwise you won\'t see the pairing code input in the notification bar.</string>
+    <string name="adb_pre_guide_step2_developer_wireless">2. Go to Settings → Developer options → Wireless debugging. Turn on \"Wireless debugging\" and tap \"Pair device with pairing code\".</string>
+    <string name="adb_pre_guide_step3_notification_code">3. After tapping, check the notification bar for the pairing code input and enter the 6-digit code shown on your device.</string>
+    <string name="adb_pre_guide_btn_start">Got it, Start</string>
 
     <!-- Virtual Display params -->
     <string name="param_vd_width">Width (px)</string>

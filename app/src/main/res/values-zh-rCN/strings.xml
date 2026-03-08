@@ -35,6 +35,10 @@
     <string name="auth_error">认证错误: %1$s</string>
     <string name="auth_unexpected_response">认证响应异常</string>
     <string name="auth_revoked">令牌已撤销: %1$s</string>
+    <string name="socket_auth_required_title">TUTU API 授权需要登录</string>
+    <string name="socket_auth_required_message">未登录时只能进行基础聊天，无法控制手机。您可以选择仅使用聊天，或前往登录以完成 TUTU API 授权并控制设备。</string>
+    <string name="btn_chat_only">仅聊天</string>
+    <string name="btn_go_login">去登录</string>
 
     <!-- Permission Check Dialog -->
     <string name="perm_dialog_title">运行 Skill 需要以下权限</string>
@@ -215,4 +219,12 @@
     <string name="adb_guide_btn_go_settings">前往设置</string>
     <string name="adb_guide_note">系统将跳转到开发者选项，请向下滑动找到「无线调试」。</string>
     <string name="adb_guide_notification_tip">如果配对码输入通知没有自动弹出，请手动下拉通知栏查找。</string>
+    <string name="adb_guide_btn_request_notification">开启通知权限</string>
+
+    <!-- 设置前须知 -->
+    <string name="adb_pre_guide_title">设置前请阅读</string>
+    <string name="adb_pre_guide_step1_notification">1. 请先确认已开启通知权限，否则无法在通知栏看到配对码输入框。</string>
+    <string name="adb_pre_guide_step2_developer_wireless">2. 进入「设置 → 开发者选项 → 无线调试」，打开「无线调试」开关，并点击「使用配对码配对设备」。</string>
+    <string name="adb_pre_guide_step3_notification_code">3. 点击后，请在通知栏中查看配对码输入框，输入设备上显示的 6 位配对码。</string>
+    <string name="adb_pre_guide_btn_start">知道了，开始</string>
 </resources>

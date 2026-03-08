@@ -14,6 +14,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
 import com.tutu.meowhub.feature.account.AccountScreen
 import com.tutu.meowhub.feature.account.LoginScreen
@@ -68,12 +70,44 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
     var currentScreen by remember { mutableStateOf(AppScreen.MAIN) }
     var showLoginPrompt by remember { mutableStateOf(false) }
     var loginPromptReason by remember { mutableStateOf("") }
+    var showSocketAuthDialog by remember { mutableStateOf(false) }
+    var hasShownSocketAuthDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         MeowApp.instance.loginRequiredEvent.collect { reason ->
             loginPromptReason = reason
             showLoginPrompt = true
         }
+    }
+
+    LaunchedEffect(Unit) {
+        MeowApp.instance.socketAuthRequiredEvent.collect {
+            if (!hasShownSocketAuthDialog) {
+                hasShownSocketAuthDialog = true
+                showSocketAuthDialog = true
+            }
+        }
+    }
+
+    if (showSocketAuthDialog) {
+        AlertDialog(
+            onDismissRequest = { showSocketAuthDialog = false },
+            title = { Text(stringResource(R.string.socket_auth_required_title)) },
+            text = { Text(stringResource(R.string.socket_auth_required_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSocketAuthDialog = false
+                    currentScreen = AppScreen.LOGIN
+                }) {
+                    Text(stringResource(R.string.btn_go_login))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSocketAuthDialog = false }) {
+                    Text(stringResource(R.string.btn_chat_only))
+                }
+            }
+        )
     }
 
     if (showLoginPrompt) {
