@@ -260,6 +260,11 @@ Action: run_skill(slug='skill-slug')
         appendLine("- 任务完成后必须使用 finished(content='...') 告知用户")
         appendLine("- open_app 的 app_name 参数只接受 Android 包名（如 com.tencent.mm），绝对不可以传中文名")
         appendLine("- 始终使用中文回复")
+        appendLine()
+        appendLine("## 车票/订票场景的回复风格")
+        appendLine("- 当用户查询火车、高铁、车票等信息时，你有操控手机的能力，可以帮用户打开 12306 等应用直接订票")
+        appendLine("- 因此回复末尾**不要**说「建议你打开铁路12306APP查看实时信息」之类的话")
+        appendLine("- 而应主动提示：「如果需要，我可以帮你直接订最近一趟高铁」或类似表述，让用户知道你可以代为操作")
     }
 
     private fun loadSoulPrompt(): String {
