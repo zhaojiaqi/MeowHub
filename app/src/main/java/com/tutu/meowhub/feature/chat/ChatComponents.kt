@@ -13,13 +13,20 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tutu.meowhub.R
@@ -132,7 +139,7 @@ private fun AiMessage(message: ChatMessage) {
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.widthIn(max = 280.dp)) {
             if (message.content.isNotEmpty()) {
-                Text(
+                MarkdownText(
                     text = message.content,
                     modifier = Modifier
                         .clip(
@@ -277,5 +284,116 @@ private fun ActionStepRow(step: ActionStep) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+@Composable
+fun MarkdownText(
+    text: String,
+    color: Color,
+    fontSize: TextUnit,
+    lineHeight: TextUnit,
+    modifier: Modifier = Modifier
+) {
+    val annotated = remember(text) { parseMarkdown(text, color, fontSize) }
+    Text(
+        text = annotated,
+        modifier = modifier,
+        fontSize = fontSize,
+        lineHeight = lineHeight
+    )
+}
+
+private fun parseMarkdown(
+    source: String,
+    baseColor: Color,
+    baseFontSize: TextUnit
+): AnnotatedString = buildAnnotatedString {
+    val lines = source.lines()
+    lines.forEachIndexed { lineIdx, rawLine ->
+        val line = rawLine.trimEnd()
+
+        when {
+            line.startsWith("### ") -> {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, fontSize = baseFontSize * 1.05f, color = baseColor)) {
+                    appendInlineMarkdown(line.removePrefix("### "), baseColor)
+                }
+            }
+            line.startsWith("## ") -> {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = baseFontSize * 1.1f, color = baseColor)) {
+                    appendInlineMarkdown(line.removePrefix("## "), baseColor)
+                }
+            }
+            line.startsWith("# ") -> {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = baseFontSize * 1.2f, color = baseColor)) {
+                    appendInlineMarkdown(line.removePrefix("# "), baseColor)
+                }
+            }
+            line.startsWith("- ") || line.startsWith("* ") -> {
+                withStyle(SpanStyle(color = baseColor)) {
+                    append("  •  ")
+                    appendInlineMarkdown(line.drop(2), baseColor)
+                }
+            }
+            line.matches(Regex("^\\d+\\.\\s.*")) -> {
+                val content = line.replaceFirst(Regex("^\\d+\\.\\s"), "")
+                val num = line.substringBefore(".")
+                withStyle(SpanStyle(color = baseColor)) {
+                    append("  $num.  ")
+                    appendInlineMarkdown(content, baseColor)
+                }
+            }
+            else -> {
+                withStyle(SpanStyle(color = baseColor)) {
+                    appendInlineMarkdown(line, baseColor)
+                }
+            }
+        }
+
+        if (lineIdx < lines.lastIndex) append("\n")
+    }
+}
+
+private val inlinePattern = Regex(
+    """\*\*(.+?)\*\*""" +      // group 1: bold
+    """|__(.+?)__""" +          // group 2: bold (underscore)
+    """|`(.+?)`""" +            // group 3: inline code
+    """|\*(.+?)\*""" +          // group 4: italic
+    """|_(.+?)_"""              // group 5: italic (underscore)
+)
+
+private fun AnnotatedString.Builder.appendInlineMarkdown(text: String, baseColor: Color) {
+    var cursor = 0
+    for (match in inlinePattern.findAll(text)) {
+        if (match.range.first > cursor) {
+            append(text.substring(cursor, match.range.first))
+        }
+        when {
+            match.groupValues[1].isNotEmpty() || match.groupValues[2].isNotEmpty() -> {
+                val content = match.groupValues[1].ifEmpty { match.groupValues[2] }
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(content)
+                }
+            }
+            match.groupValues[3].isNotEmpty() -> {
+                withStyle(SpanStyle(
+                    background = Color.White.copy(alpha = 0.08f),
+                    color = MeowGold,
+                    fontWeight = FontWeight.Medium
+                )) {
+                    append(" ${match.groupValues[3]} ")
+                }
+            }
+            match.groupValues[4].isNotEmpty() || match.groupValues[5].isNotEmpty() -> {
+                val content = match.groupValues[4].ifEmpty { match.groupValues[5] }
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    append(content)
+                }
+            }
+        }
+        cursor = match.range.last + 1
+    }
+    if (cursor < text.length) {
+        append(text.substring(cursor))
     }
 }
