@@ -70,6 +70,10 @@ android {
             version = "3.22.1"
         }
     }
+    lint {
+        // 不上架 Google Play，禁用 targetSdk 版本检查
+        disable += "ExpiredTargetSdkVersion"
+    }
 }
 
 dependencies {
