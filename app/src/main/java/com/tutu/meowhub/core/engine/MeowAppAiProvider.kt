@@ -20,7 +20,7 @@ class MeowAppAiProvider(
 ) : AiProvider {
 
     companion object {
-        private const val AI_CHAT_URL = "https://tutuai.me/api/meowapp/ai/chat.php"
+        private const val AI_RESPONSES_URL = "https://tutuai.me/api/meowapp/ai/responses.php"
         private const val CONNECT_TIMEOUT_MS = 10_000
         private const val READ_TIMEOUT_MS = 120_000
     }
@@ -39,6 +39,7 @@ class MeowAppAiProvider(
 
         val input = buildJsonArray {
             addJsonObject {
+                put("type", "message")
                 put("role", "system")
                 put("content", buildJsonArray {
                     addJsonObject {
@@ -50,6 +51,7 @@ class MeowAppAiProvider(
 
             for (msg in history) {
                 addJsonObject {
+                    put("type", "message")
                     put("role", msg.role)
                     put("content", buildJsonArray {
                         addJsonObject {
@@ -61,6 +63,7 @@ class MeowAppAiProvider(
             }
 
             addJsonObject {
+                put("type", "message")
                 put("role", "user")
                 put("content", buildUserContent(screenshotBase64, uiNodesJson))
             }
@@ -80,7 +83,7 @@ class MeowAppAiProvider(
             })
         }
 
-        val conn = (URL(AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
+        val conn = (URL(AI_RESPONSES_URL).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
