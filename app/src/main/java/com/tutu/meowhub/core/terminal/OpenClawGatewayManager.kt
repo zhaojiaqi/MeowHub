@@ -120,25 +120,7 @@ class OpenClawGatewayManager(private val context: Context) {
                 Log.d(TAG, "stopStaleGateway: HTTP shutdown failed: ${e.message}")
             }
 
-            // 2) Try openclaw CLI stop
-            try {
-                val stopCmd = ProcessBuilder(
-                    "/system/bin/sh", "-c",
-                    "export LD_LIBRARY_PATH='$prefix/lib' && " +
-                    "export PATH='$prefix/bin:$prefix/bin/applets:/system/bin' && " +
-                    "export HOME='$home' && " +
-                    "export NODE_OPTIONS=\"-r \$HOME/bionic-compat.js\" && " +
-                    "$prefix/bin/node $prefix/lib/node_modules/openclaw/openclaw.mjs gateway stop 2>&1"
-                ).redirectErrorStream(true).start()
-
-                val output = stopCmd.inputStream.bufferedReader().readText()
-                val exitCode = stopCmd.waitFor()
-                Log.i(TAG, "stopStaleGateway: CLI stop exit=$exitCode output=$output")
-            } catch (e: Exception) {
-                Log.w(TAG, "stopStaleGateway: CLI stop failed: ${e.message}")
-            }
-
-            // 3) pkill + lock cleanup
+            // 2) pkill + lock cleanup
             try {
                 Runtime.getRuntime().exec(arrayOf(
                     "/system/bin/sh", "-c",

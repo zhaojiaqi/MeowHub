@@ -549,6 +549,94 @@ class OpenClawInstaller(private val context: Context) {
         }
     }
 
+    fun mergeTutuAiConfig(accessToken: String) {
+        try {
+            val configFile = File("$home/.openclaw/openclaw.json")
+            val json = if (configFile.exists()) {
+                try { JSONObject(configFile.readText()) } catch (_: Exception) { JSONObject() }
+            } else {
+                JSONObject()
+            }
+            configFile.parentFile?.mkdirs()
+
+            mergeBaseConfig(json)
+
+            val defaults = json.getOrPut("agents").getOrPut("defaults")
+            defaults.put("workspace", "$home/.openclaw/workspace")
+            defaults.remove("mcp")
+            defaults.getOrPut("model").put("primary", "tutuai/doubao-seed-2-0-lite-260215")
+
+            val modelsRoot = json.getOrPut("models")
+            modelsRoot.put("mode", "merge")
+            modelsRoot.remove("default")
+            val providers = modelsRoot.getOrPut("providers")
+            providers.remove("doubao")
+            providers.remove("volcengine")
+
+            val tutuModels = JSONArray()
+
+            tutuModels.put(JSONObject().apply {
+                put("id", "doubao-seed-2-0-pro-260215")
+                put("name", "豆包Seed 2.0 Pro")
+                put("reasoning", true)
+                put("input", JSONArray().put("text").put("image"))
+                put("contextWindow", 256000)
+                put("maxTokens", 128000)
+                put("cost", JSONObject()
+                    .put("input", 0).put("output", 0)
+                    .put("cacheRead", 0).put("cacheWrite", 0))
+                put("compat", JSONObject().apply {
+                    put("supportsReasoningEffort", true)
+                    put("maxTokensField", "max_tokens")
+                })
+            })
+
+            tutuModels.put(JSONObject().apply {
+                put("id", "doubao-seed-2-0-lite-260215")
+                put("name", "豆包Seed 2.0 Lite")
+                put("reasoning", true)
+                put("input", JSONArray().put("text").put("image"))
+                put("contextWindow", 128000)
+                put("maxTokens", 30000)
+                put("cost", JSONObject()
+                    .put("input", 0).put("output", 0)
+                    .put("cacheRead", 0).put("cacheWrite", 0))
+                put("compat", JSONObject().apply {
+                    put("supportsReasoningEffort", true)
+                    put("maxTokensField", "max_tokens")
+                })
+            })
+
+            tutuModels.put(JSONObject().apply {
+                put("id", "doubao-seed-2-0-mini-260215")
+                put("name", "豆包Seed 2.0 Mini")
+                put("reasoning", true)
+                put("input", JSONArray().put("text").put("image"))
+                put("contextWindow", 256000)
+                put("maxTokens", 30000)
+                put("cost", JSONObject()
+                    .put("input", 0).put("output", 0)
+                    .put("cacheRead", 0).put("cacheWrite", 0))
+                put("compat", JSONObject().apply {
+                    put("supportsReasoningEffort", true)
+                    put("maxTokensField", "max_tokens")
+                })
+            })
+
+            providers.put("tutuai", JSONObject().apply {
+                put("baseUrl", "https://tutuai.me/v1")
+                put("apiKey", accessToken)
+                put("api", "openai-completions")
+                put("models", tutuModels)
+            })
+
+            configFile.writeText(json.toString(2))
+            Log.i(TAG, "mergeTutuAiConfig: merged tutuai provider (baseUrl=https://tutuai.me/v1)")
+        } catch (e: Exception) {
+            Log.e(TAG, "mergeTutuAiConfig: FAILED", e)
+        }
+    }
+
     fun mergeMinimalConfig() {
         try {
             val configFile = File("$home/.openclaw/openclaw.json")

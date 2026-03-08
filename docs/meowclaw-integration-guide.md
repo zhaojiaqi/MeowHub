@@ -127,7 +127,7 @@ OpenClaw 内置了火山引擎的 provider 映射，识别的名称是 **`volcen
   "agents": {
     "defaults": {
       "model": {
-        "primary": "volcengine/doubao-seed-2-0-lite-260215"
+        "primary": "volcengine2-0-lite-260215"
       }
     }
   },
@@ -459,7 +459,7 @@ adb shell "pm clear com.tutu.meowhub"
 
 ## 版本信息
 
-- **OpenClaw**: 2026.3.2
+- **OpenClaw**: 2026.3.7
 - **Node.js**: 24.13.0 LTS
 - **Termux Bootstrap**: aarch64
 - **豆包 Seed 2.0**: Pro / Lite / Mini

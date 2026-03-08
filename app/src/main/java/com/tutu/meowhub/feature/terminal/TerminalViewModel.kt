@@ -94,13 +94,15 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             switchToGatewaySessionIfAvailable()
         }
         onFirstHealthy = {
-            Log.i(TAG, "Gateway first healthy, merging config now")
-            writeOpenClawConfigFromBuildConfig()
+            Log.i(TAG, "Gateway first healthy")
             printWelcomeBanner()
         }
     }
 
-    private val _isModelConfigured = MutableStateFlow(BuildConfig.DOUBAO_API_KEY.isNotBlank())
+    private val _isModelConfigured = MutableStateFlow(
+        BuildConfig.DOUBAO_API_KEY.isNotBlank()
+            || (application as MeowApp).meowAppAuth.getAccessToken() != null
+    )
     val isModelConfigured: StateFlow<Boolean> = _isModelConfigured.asStateFlow()
 
     init {
@@ -256,7 +258,9 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
                 openClawInstaller.checkStatus()
                 gatewayManager.refreshState()
             }
+            val app = getApplication<MeowApp>()
             _isModelConfigured.value = BuildConfig.DOUBAO_API_KEY.isNotBlank()
+                || app.meowAppAuth.getAccessToken() != null
                 || openClawInstaller.isModelConfigured()
         }
     }
@@ -265,6 +269,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             Log.i(TAG, "startGateway: manual start")
             openClawInstaller.copyMcpServerFromAssets()
+            writeOpenClawConfigFromBuildConfig()
             bridgeServer.start()
             gatewayManager.startGateway(termuxService)
         }
@@ -277,21 +282,31 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 
     private fun writeOpenClawConfigFromBuildConfig() {
         val apiKey = BuildConfig.DOUBAO_API_KEY
-        if (apiKey.isBlank()) {
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY, merging minimal config")
-            openClawInstaller.mergeMinimalConfig()
-            _isModelConfigured.value = openClawInstaller.isModelConfigured()
+        if (apiKey.isNotBlank()) {
+            val baseUrl = BuildConfig.DOUBAO_BASE_URL
+            val modelId = BuildConfig.DOUBAO_MODEL_ID
+            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: merging config with model=$modelId")
+            openClawInstaller.mergeOpenClawConfig(
+                apiKey = apiKey,
+                baseUrl = baseUrl,
+                modelId = modelId
+            )
+            _isModelConfigured.value = true
             return
         }
-        val baseUrl = BuildConfig.DOUBAO_BASE_URL
-        val modelId = BuildConfig.DOUBAO_MODEL_ID
-        Log.i(TAG, "writeOpenClawConfigFromBuildConfig: merging config with model=$modelId")
-        openClawInstaller.mergeOpenClawConfig(
-            apiKey = apiKey,
-            baseUrl = baseUrl,
-            modelId = modelId
-        )
-        _isModelConfigured.value = true
+
+        val app = getApplication<MeowApp>()
+        val accessToken = app.meowAppAuth.getAccessToken()
+        if (accessToken != null) {
+            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY but user logged in, using TutuAI")
+            openClawInstaller.mergeTutuAiConfig(accessToken)
+            _isModelConfigured.value = true
+            return
+        }
+
+        Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY and not logged in, merging minimal config")
+        openClawInstaller.mergeMinimalConfig()
+        _isModelConfigured.value = openClawInstaller.isModelConfigured()
     }
 
     private fun autoStartGatewayIfReady() {
@@ -301,8 +316,9 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             if (installed) {
                 openClawInstaller.copyMcpServerFromAssets()
                 openClawInstaller.copyWorkspaceFilesFromAssets()
+                writeOpenClawConfigFromBuildConfig()
                 bridgeServer.start()
-                Log.i(TAG, "autoStartGatewayIfReady: bridge server started")
+                Log.i(TAG, "autoStartGatewayIfReady: bridge server started, config written")
                 val healthy = withContext(Dispatchers.IO) { gatewayManager.checkHealth() }
                 Log.i(TAG, "autoStartGatewayIfReady: gatewayHealthy=$healthy")
                 if (!healthy) {
