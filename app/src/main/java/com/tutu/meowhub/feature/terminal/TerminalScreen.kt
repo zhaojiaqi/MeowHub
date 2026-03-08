@@ -30,11 +30,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.termux.view.TerminalView
+import com.tutu.meowhub.R
 import com.tutu.meowhub.core.terminal.MeowTerminalViewClient
 
 private val MeowGold = Color(0xFFF5B731)
@@ -83,7 +85,7 @@ fun TerminalScreen(
 
         when (bootstrapState) {
             TerminalViewModel.BootstrapState.CHECKING -> {
-                LoadingContent("检查终端环境...")
+                LoadingContent(stringResource(R.string.term_checking_env))
             }
             TerminalViewModel.BootstrapState.NOT_INSTALLED -> {
                 InstallContent(
@@ -95,7 +97,7 @@ fun TerminalScreen(
             }
             TerminalViewModel.BootstrapState.ERROR -> {
                 ErrorContent(
-                    message = errorMessage ?: "Unknown error",
+                    message = errorMessage ?: stringResource(R.string.term_unknown_error),
                     onRetry = { viewModel.installBootstrap() }
                 )
             }
@@ -129,7 +131,7 @@ fun TerminalScreen(
                                 }
                             )
                         } else {
-                            LoadingContent("正在启动终端...")
+                            LoadingContent(stringResource(R.string.term_starting))
                         }
                     }
                     TerminalTab.CONSOLE -> {
@@ -149,13 +151,13 @@ fun TerminalScreen(
                                     CircularProgressIndicator(color = MeowGold)
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        "等待 Gateway 启动...",
+                                        stringResource(R.string.term_waiting_gateway),
                                         color = MeowTextDim,
                                         fontSize = 15.sp
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        "Gateway 启动后将自动加载控制台",
+                                        stringResource(R.string.term_gateway_then_console),
                                         color = MeowTextDim.copy(alpha = 0.6f),
                                         fontSize = 12.sp
                                     )
@@ -198,7 +200,7 @@ private fun TerminalTopBar(
                 Text(text = "🐱", fontSize = 20.sp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "MeowTerminal",
+                    text = stringResource(R.string.term_product_name),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MeowGold
@@ -224,12 +226,12 @@ private fun TerminalTopBar(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 TabChip(
-                    label = "⌨ 终端",
+                    label = stringResource(R.string.term_tab_terminal),
                     isActive = activeTab == TerminalTab.TERMINAL,
                     onClick = { onTabSwitch(TerminalTab.TERMINAL) }
                 )
                 TabChip(
-                    label = "🌐 控制台",
+                    label = stringResource(R.string.term_tab_console),
                     isActive = activeTab == TerminalTab.CONSOLE,
                     onClick = { onTabSwitch(TerminalTab.CONSOLE) },
                     badge = consoleAvailable
@@ -461,7 +463,7 @@ private fun ConsoleWebView(
                     "Timeout state: webview.url=$wvUrl progress=$progress width=${wv.width} height=${wv.height}")
             }
             isLoading = false
-            loadError = "加载超时（15秒），请检查 Gateway 是否正常运行"
+            loadError = ctx.getString(R.string.term_load_timeout)
         }
     }
 
@@ -523,7 +525,7 @@ private fun ConsoleWebView(
                                     "onReceivedError: url=$reqUrl code=$code desc=$desc isMainFrame=${request?.isForMainFrame}")
                                 if (request?.isForMainFrame == true) {
                                     isLoading = false
-                                    loadError = "加载失败 (code=$code): $desc"
+                                    loadError = ctx.getString(R.string.term_load_failed, code.toString(), desc?.toString() ?: "")
                                 }
                             }
 
@@ -536,7 +538,7 @@ private fun ConsoleWebView(
                                     "onReceivedHttpError: ${request?.url} status=${errorResponse?.statusCode} isMainFrame=${request?.isForMainFrame}")
                                 if (request?.isForMainFrame == true) {
                                     isLoading = false
-                                    loadError = "HTTP ${errorResponse?.statusCode}: ${errorResponse?.reasonPhrase}"
+                                    loadError = ctx.getString(R.string.term_http_error, errorResponse?.statusCode ?: 0, errorResponse?.reasonPhrase ?: "")
                                 }
                             }
 
@@ -549,7 +551,7 @@ private fun ConsoleWebView(
                                     "onReceivedSslError: ${error?.url} type=${error?.primaryError}")
                                 handler?.cancel()
                                 isLoading = false
-                                loadError = "SSL 错误: ${error?.primaryError}"
+                                loadError = ctx.getString(R.string.term_ssl_error, error?.primaryError?.toString() ?: "")
                             }
 
                             override fun shouldOverrideUrlLoading(
@@ -575,8 +577,8 @@ private fun ConsoleWebView(
                                 webView = null
                                 isLoading = false
                                 loadError =
-                                    if (crashed) "WebView 渲染进程崩溃，请重试"
-                                    else "WebView 渲染进程被系统回收（内存不足），请重试"
+                                    if (crashed) ctx.getString(R.string.term_webview_crashed)
+                                    else ctx.getString(R.string.term_webview_recycled)
                                 return true
                             }
                         }
@@ -637,7 +639,7 @@ private fun ConsoleWebView(
                     CircularProgressIndicator(color = MeowGold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "加载控制台...",
+                        stringResource(R.string.term_loading_console),
                         color = MeowTextDim,
                         fontSize = 14.sp
                     )
@@ -657,7 +659,7 @@ private fun ConsoleWebView(
                     modifier = Modifier.padding(horizontal = 32.dp)
                 ) {
                     Text(
-                        "控制台连接失败",
+                        stringResource(R.string.term_console_connect_failed),
                         color = Color(0xFFFF6B6B),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -697,7 +699,7 @@ private fun ConsoleWebView(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("重试", color = MeowBg, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.term_btn_retry), color = MeowBg, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -742,14 +744,14 @@ private fun InstallContent(onInstall: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "终端环境",
+                    text = stringResource(R.string.term_env_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MeowGold
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "首次使用需要初始化终端环境，将解压 Linux 基础组件包（约30MB）。",
+                    text = stringResource(R.string.term_env_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MeowTextDim,
                     textAlign = TextAlign.Center,
@@ -765,7 +767,7 @@ private fun InstallContent(onInstall: () -> Unit) {
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        "立即安装",
+                        stringResource(R.string.term_btn_install_now),
                         color = MeowBg,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
@@ -799,7 +801,7 @@ private fun InstallingContent(progress: String) {
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    text = "正在初始化环境",
+                    text = stringResource(R.string.term_initializing),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MeowText
@@ -834,7 +836,7 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "安装失败",
+                    text = stringResource(R.string.term_install_failed),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF6B6B)
@@ -856,7 +858,7 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        "重试",
+                        stringResource(R.string.term_btn_retry),
                         color = MeowBg,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp

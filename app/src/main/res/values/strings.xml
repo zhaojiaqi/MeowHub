@@ -428,4 +428,28 @@
     <string name="param_vd_key_action">Action (0=DOWN, 1=UP, auto if omit)</string>
     <string name="param_repeat">Repeat</string>
     <string name="param_meta_state">Meta State</string>
+
+    <!-- Terminal (MeowClaw) -->
+    <string name="term_checking_env">Checking terminal environment…</string>
+    <string name="term_unknown_error">Unknown error</string>
+    <string name="term_starting">Starting terminal…</string>
+    <string name="term_waiting_gateway">Waiting for Gateway to start…</string>
+    <string name="term_gateway_then_console">Console will load automatically after Gateway starts.</string>
+    <string name="term_product_name">MeowTerminal</string>
+    <string name="term_tab_terminal">⌨ Terminal</string>
+    <string name="term_tab_console">🌐 Console</string>
+    <string name="term_load_timeout">Load timeout (15s). Please check if Gateway is running.</string>
+    <string name="term_load_failed">Load failed (code=%1$s): %2$s</string>
+    <string name="term_http_error">HTTP %1$d: %2$s</string>
+    <string name="term_ssl_error">SSL error: %1$s</string>
+    <string name="term_webview_crashed">WebView renderer crashed. Please try again.</string>
+    <string name="term_webview_recycled">WebView renderer was killed (low memory). Please try again.</string>
+    <string name="term_loading_console">Loading console…</string>
+    <string name="term_console_connect_failed">Console connection failed</string>
+    <string name="term_btn_retry">Retry</string>
+    <string name="term_env_title">Terminal environment</string>
+    <string name="term_env_desc">First-time setup will extract the Linux base package (~113MB).</string>
+    <string name="term_btn_install_now">Install now</string>
+    <string name="term_initializing">Initializing environment</string>
+    <string name="term_install_failed">Installation failed</string>
 </resources>

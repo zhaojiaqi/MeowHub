@@ -227,4 +227,28 @@
     <string name="adb_pre_guide_step2_developer_wireless">2. 进入「设置 → 开发者选项 → 无线调试」，打开「无线调试」开关，并点击「使用配对码配对设备」。</string>
     <string name="adb_pre_guide_step3_notification_code">3. 点击后，请在通知栏中查看配对码输入框，输入设备上显示的 6 位配对码。</string>
     <string name="adb_pre_guide_btn_start">知道了，开始</string>
+
+    <!-- Terminal (MeowClaw) -->
+    <string name="term_checking_env">检查终端环境…</string>
+    <string name="term_unknown_error">未知错误</string>
+    <string name="term_starting">正在启动终端…</string>
+    <string name="term_waiting_gateway">等待 Gateway 启动…</string>
+    <string name="term_gateway_then_console">Gateway 启动后将自动加载控制台</string>
+    <string name="term_product_name">MeowTerminal</string>
+    <string name="term_tab_terminal">⌨ 终端</string>
+    <string name="term_tab_console">🌐 控制台</string>
+    <string name="term_load_timeout">加载超时（15秒），请检查 Gateway 是否正常运行</string>
+    <string name="term_load_failed">加载失败 (code=%1$s): %2$s</string>
+    <string name="term_http_error">HTTP %1$d: %2$s</string>
+    <string name="term_ssl_error">SSL 错误: %1$s</string>
+    <string name="term_webview_crashed">WebView 渲染进程崩溃，请重试</string>
+    <string name="term_webview_recycled">WebView 渲染进程被系统回收（内存不足），请重试</string>
+    <string name="term_loading_console">加载控制台…</string>
+    <string name="term_console_connect_failed">控制台连接失败</string>
+    <string name="term_btn_retry">重试</string>
+    <string name="term_env_title">终端环境</string>
+    <string name="term_env_desc">首次使用需要初始化终端环境，将解压 Linux 基础组件包（约113MB）。</string>
+    <string name="term_btn_install_now">立即安装</string>
+    <string name="term_initializing">正在初始化环境</string>
+    <string name="term_install_failed">安装失败</string>
 </resources>
