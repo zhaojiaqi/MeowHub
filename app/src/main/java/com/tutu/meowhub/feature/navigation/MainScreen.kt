@@ -1,8 +1,8 @@
 package com.tutu.meowhub.feature.navigation
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,9 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +33,7 @@ import com.tutu.meowhub.feature.market.MarketScreen
 import com.tutu.meowhub.feature.myskills.MySkillsScreen
 import com.tutu.meowhub.feature.terminal.TerminalScreen
 import com.tutu.meowhub.feature.settings.AdbSetupGuideDialog
+import com.tutu.meowhub.feature.settings.AdbSetupPreGuideDialog
 import com.tutu.meowhub.feature.settings.AdbSetupPromptDialog
 import com.tutu.meowhub.feature.settings.AdbViewModel
 import com.tutu.meowhub.feature.settings.SettingsScreen
@@ -65,18 +63,11 @@ fun MainScreen(
     val autoResult by adbViewModel.autoConnectResult.collectAsState()
 
     var showPromptDialog by remember { mutableStateOf(false) }
+    var showPreGuideDialog by remember { mutableStateOf(false) }
     var showGuideDialog by remember { mutableStateOf(false) }
     var pendingResult by remember { mutableStateOf(AdbViewModel.AutoConnectResult.PENDING) }
     var waitingForReturn by remember { mutableStateOf(false) }
     var needsPairing by remember { mutableStateOf(false) }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            showGuideDialog = true
-        }
-    }
 
     LaunchedEffect(autoResult) {
         when (autoResult) {
@@ -111,15 +102,24 @@ fun MainScreen(
                 needsPairing = pendingResult == AdbViewModel.AutoConnectResult.NO_KEY
                         || pendingResult == AdbViewModel.AutoConnectResult.KEY_EXPIRED
 
-                if (needsPairing
-                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                    && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED
-                ) {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (needsPairing) {
+                    showPreGuideDialog = true
                 } else {
                     showGuideDialog = true
                 }
+            }
+        )
+    }
+
+    if (showPreGuideDialog) {
+        AdbSetupPreGuideDialog(
+            onDismiss = {
+                showPreGuideDialog = false
+                adbViewModel.dismissAutoConnectResult()
+            },
+            onConfirm = {
+                showPreGuideDialog = false
+                showGuideDialog = true
             }
         )
     }
@@ -138,7 +138,16 @@ fun MainScreen(
                     adbViewModel.startPairing()
                 }
                 adbViewModel.dismissAutoConnectResult()
-            }
+            },
+            onOpenNotificationSettings = if (needsPairing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        }
+                    )
+                }
+            } else null
         )
     }
 

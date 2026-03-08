@@ -1,10 +1,15 @@
 package com.tutu.meowhub.feature.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhonelinkSetup
 import androidx.compose.material.icons.filled.Wifi
@@ -17,6 +22,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.tutu.meowhub.R
 
 @Composable
@@ -89,12 +97,79 @@ private data class PromptConfig(
 )
 
 @Composable
+fun AdbSetupPreGuideDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text(
+                stringResource(R.string.adb_pre_guide_title),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    stringResource(R.string.adb_pre_guide_step1_notification),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    stringResource(R.string.adb_pre_guide_step2_developer_wireless),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    stringResource(R.string.adb_pre_guide_step3_notification_code),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.adb_setup_btn_later))
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text(stringResource(R.string.adb_pre_guide_btn_start))
+            }
+        }
+    )
+}
+
+private fun hasNotificationPermission(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+    return ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
+}
+
+@Composable
 fun AdbSetupGuideDialog(
     needsPairing: Boolean,
     onDismiss: () -> Unit,
-    onGoToSettings: () -> Unit
+    onGoToSettings: () -> Unit,
+    onOpenNotificationSettings: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    var notificationGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationGranted = hasNotificationPermission(context)
+    }
+
+    val showNotificationButton = needsPairing &&
+        onOpenNotificationSettings != null &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        !notificationGranted
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -107,7 +182,32 @@ fun AdbSetupGuideDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (showNotificationButton) {
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                stringResource(R.string.adb_notification_required),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(
+                                onClick = onOpenNotificationSettings!!
+                            ) {
+                                Text(stringResource(R.string.adb_guide_btn_request_notification))
+                            }
+                        }
+                    }
+                }
                 Text(
                     stringResource(R.string.adb_guide_step1_enable),
                     style = MaterialTheme.typography.bodyMedium
