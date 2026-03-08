@@ -443,6 +443,7 @@ private fun ConsoleWebView(
     url: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var webView by remember { mutableStateOf<WebView?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -463,7 +464,7 @@ private fun ConsoleWebView(
                     "Timeout state: webview.url=$wvUrl progress=$progress width=${wv.width} height=${wv.height}")
             }
             isLoading = false
-            loadError = ctx.getString(R.string.term_load_timeout)
+            loadError = context.getString(R.string.term_load_timeout)
         }
     }
 
