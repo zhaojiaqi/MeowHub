@@ -31,7 +31,7 @@
     <string name="auth_sending">发送认证握手…</string>
     <string name="auth_success">认证通过: %1$s</string>
     <string name="auth_failed">认证失败: %1$s</string>
-    <string name="auth_timeout">认证超时 (20s)</string>
+    <string name="auth_timeout">认证超时 (5s)</string>
     <string name="auth_error">认证错误: %1$s</string>
     <string name="auth_unexpected_response">认证响应异常</string>
     <string name="auth_revoked">令牌已撤销: %1$s</string>
@@ -55,6 +55,8 @@
     <string name="btn_start_overlay">启动悬浮窗</string>
     <string name="btn_stop_overlay">关闭悬浮窗</string>
     <string name="quick_controls">快捷控制</string>
+    <string name="instruction_hint">告诉我你想做什么…</string>
+    <string name="instruction_send">发送</string>
 
     <!-- Overlay actions -->
     <string name="action_home">主页</string>
