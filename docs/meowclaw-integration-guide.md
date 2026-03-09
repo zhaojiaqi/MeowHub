@@ -12,6 +12,7 @@
 - [调试方法](#调试方法)
 - [关键配置文件](#关键配置文件)
 - [常见问题 FAQ](#常见问题-faq)
+- [OpenClaw 打包更新指南](#openclaw-打包更新指南)
 
 ---
 
@@ -455,11 +456,109 @@ adb shell "pm clear com.tutu.meowhub"
 ```
 然后重新打开 APP，等待自动安装完成。
 
+### Q: 为什么执行 `openclaw update` 提示「找不到 openclaw 命令」？
+**A:** 旧版本安装脚本没有在 PATH 中创建 `openclaw` 可执行文件。更新到包含 openclaw CLI wrapper 的版本后，安装完成即可在终端直接运行 `openclaw`、`openclaw update` 等命令。
+
+若你当前已是新版本但仍找不到命令，可能是安装时未执行到创建 wrapper 的步骤。可手动创建（在 APP 的 Termux 终端中执行，需先 `export PREFIX=$HOME/../usr`）：
+```bash
+export PREFIX="$HOME/../usr"
+cat > $PREFIX/bin/openclaw << 'EOF'
+#!/system/bin/sh
+export PREFIX="$HOME/../usr"
+export LD_LIBRARY_PATH="$PREFIX/lib"
+export PATH="$PREFIX/bin:$PATH"
+export NODE_OPTIONS="-r $HOME/bionic-compat.js"
+exec "$PREFIX/bin/node" "$PREFIX/lib/node_modules/openclaw/openclaw.mjs" "$@"
+EOF
+chmod 755 $PREFIX/bin/openclaw
+```
+
+**注意**：MeowHub 使用**离线打包**的 OpenClaw，`openclaw update` 依赖网络下载，在无网络或网络受限的 Android 环境下可能失败。版本更新需按下方「OpenClaw 打包更新指南」重新打包 tar.xz 并发布新版本 APP。
+
+---
+
+## OpenClaw 打包更新指南
+
+当 OpenClaw 发布新版本时，按以下步骤更新 `app/src/main/assets/openclaw-node-modules.tar.xz`：
+
+### 前置条件
+
+- macOS（或 Linux，命令略有差异）
+- Node.js + npm
+- 如需代理：`export https_proxy=http://127.0.0.1:7890 http_proxy=... all_proxy=socks5://127.0.0.1:7890`
+
+### 步骤
+
+```bash
+# 1. 查看最新版本
+npm view openclaw version
+
+# 2. 创建临时目录并安装（必须用 --install-strategy=nested 保证依赖完整）
+mkdir -p /tmp/oc-rebuild/install && cd /tmp/oc-rebuild/install
+npm init -y
+npm install openclaw@<新版本号> --omit=dev --install-strategy=nested
+
+# 3. 进入 openclaw 目录
+cd node_modules/openclaw
+
+# 4. 清理：删除非 linux_arm64 的 native 模块（Android 只需 linux_arm64）
+find . -path "*darwin*" -name "*.node" -delete
+find . -type d -name "*-darwin-*" -exec rm -rf {} + 2>/dev/null
+find . -path "*win32*" -name "*.node" -delete
+find . -type d -name "*win32*" -exec rm -rf {} + 2>/dev/null
+find . -path "*linux_ia32*" -name "*.node" -delete
+find . -path "*linux_x64*" -name "*.node" -delete
+find . -path "*linux_riscv*" -name "*.node" -delete
+find . -path "*linux_armhf*" -name "*.node" -delete
+find . -path "*linux_loong*" -name "*.node" -delete
+find . -path "*musl_*" -name "*.node" -delete
+find . -path "*freebsd*" -name "*.node" -delete
+find . -path "*openbsd*" -name "*.node" -delete
+find . -path "*/koffi/build/koffi/*" -type d ! -name "linux_arm64" ! -name "koffi" ! -name "build" -exec rm -rf {} + 2>/dev/null
+
+# 5. 删除 macOS 隐藏文件和扩展属性
+find . -name ".DS_Store" -delete 2>/dev/null
+find . -name "._*" -delete 2>/dev/null
+xattr -cr . 2>/dev/null
+
+# 6. 可选：精简体积（删除 .ts 源、.map、测试目录）
+find . -name "*.ts" ! -name "*.d.ts" -path "*/node_modules/*" -delete 2>/dev/null
+find . -name "*.map" -path "*/node_modules/*" -delete 2>/dev/null
+
+# 7. 打包（COPYFILE_DISABLE 避免打包 macOS 扩展属性）
+COPYFILE_DISABLE=1 tar --no-xattrs --exclude='.DS_Store' --exclude='._*' -cf - . | xz -9 -T0 > /tmp/oc-rebuild/openclaw-node-modules.tar.xz
+
+# 8. 替换 assets
+cp /tmp/oc-rebuild/openclaw-node-modules.tar.xz /path/to/MeowHub/app/src/main/assets/openclaw-node-modules.tar.xz
+
+# 9. 更新文档版本号
+# 编辑 docs/meowclaw-integration-guide.md 中的「版本信息」章节
+```
+
+### 验证
+
+```bash
+# 检查版本
+tar -xf app/src/main/assets/openclaw-node-modules.tar.xz -O ./package.json | grep version
+
+# 检查无 macOS 隐藏文件
+tar -tf app/src/main/assets/openclaw-node-modules.tar.xz | grep -E '(\._|\.DS_Store)'  # 应无输出
+
+# 检查关键依赖存在
+tar -tf app/src/main/assets/openclaw-node-modules.tar.xz | grep -E '(strip-ansi|google-auth-library)/package.json'
+```
+
+### 注意事项
+
+- **必须**使用 `--install-strategy=nested`，否则依赖会 hoist 到顶层，打包时只取 openclaw 目录会丢失依赖（如 strip-ansi、google-auth-library）。
+- **必须**只保留 `koffi/linux_arm64`，删除 darwin/win32 等，否则包体积过大且 Android 用不到。
+- **必须**用 `COPYFILE_DISABLE=1` 和 `--no-xattrs` 打包，避免 macOS 扩展属性导致设备上解压异常。
+
 ---
 
 ## 版本信息
 
-- **OpenClaw**: 2026.3.7
+- **OpenClaw**: 2026.3.8
 - **Node.js**: 24.13.0 LTS
 - **Termux Bootstrap**: aarch64
 - **豆包 Seed 2.0**: Pro / Lite / Mini
