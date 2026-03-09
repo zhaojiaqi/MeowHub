@@ -55,6 +55,8 @@
     <string name="btn_start_overlay">Start Overlay</string>
     <string name="btn_stop_overlay">Stop Overlay</string>
     <string name="quick_controls">Quick Controls</string>
+    <string name="instruction_hint">Tell me what to do…</string>
+    <string name="instruction_send">Send</string>
 
     <!-- Overlay actions -->
     <string name="action_home">Home</string>

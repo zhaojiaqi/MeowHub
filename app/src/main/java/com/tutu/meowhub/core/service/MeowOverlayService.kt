@@ -92,7 +92,17 @@ class MeowOverlayService : Service() {
                         params.y += dy.toInt()
                         windowManager?.updateViewLayout(this, params)
                     },
-                    onClose = { stopSelf() }
+                    onClose = { stopSelf() },
+                    onRequestFocus = {
+                        params.flags = params.flags and
+                                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+                        windowManager?.updateViewLayout(this, params)
+                    },
+                    onReleaseFocus = {
+                        params.flags = params.flags or
+                                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        windowManager?.updateViewLayout(this, params)
+                    }
                 )
             }
         }
