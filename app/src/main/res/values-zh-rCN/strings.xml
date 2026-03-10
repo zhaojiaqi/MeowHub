@@ -109,6 +109,11 @@
     <string name="settings_title">设置</string>
     <string name="settings_about">关于</string>
 
+    <!-- Open Source Notice -->
+    <string name="opensource_title">本软件完全免费开源</string>
+    <string name="opensource_desc">请勿为此 APP 付费，谨防诈骗。仅提供 TUTU AI 算力服务。</string>
+    <string name="opensource_github">GitHub</string>
+
     <!-- Debug -->
     <string name="debug_panel">API 调试面板</string>
     <string name="debug_panel_desc">测试全部 70+ TUTU Socket 命令</string>

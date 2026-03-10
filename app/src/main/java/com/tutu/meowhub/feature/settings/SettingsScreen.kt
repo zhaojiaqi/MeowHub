@@ -127,6 +127,8 @@ fun SettingsScreen(
                 onNavigateAccount = onNavigateAccount
             )
 
+            OpenSourceNoticeCard()
+
             ServerControlCard(
                 state = adbState,
                 notificationDenied = notificationDenied || (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU),
@@ -736,6 +738,62 @@ private fun DebugEntryCard(onNavigateDebug: () -> Unit) {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun OpenSourceNoticeCard() {
+    val context = LocalContext.current
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Code,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.opensource_title),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.opensource_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            FilledTonalButton(
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://github.com/zhaojiaqi/MeowHub")
+                    )
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Code,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.opensource_github), style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }

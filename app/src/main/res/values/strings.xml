@@ -109,6 +109,11 @@
     <string name="settings_title">Settings</string>
     <string name="settings_about">About</string>
 
+    <!-- Open Source Notice -->
+    <string name="opensource_title">This app is completely free and open source</string>
+    <string name="opensource_desc">Do not pay for this app. Beware of scams. Only TUTU AI computing service is provided.</string>
+    <string name="opensource_github">GitHub</string>
+
     <!-- Debug -->
     <string name="debug_panel">API Debug Panel</string>
     <string name="debug_panel_desc">Test all 70+ TUTU Socket commands</string>
