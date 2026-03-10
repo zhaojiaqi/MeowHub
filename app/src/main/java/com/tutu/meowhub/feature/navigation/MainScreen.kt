@@ -50,6 +50,7 @@ enum class MainTab(
 @Composable
 fun MainScreen(
     onNavigateDebug: () -> Unit,
+    onNavigateAdvancedSettings: () -> Unit = {},
     onNavigateLogin: () -> Unit = {},
     onNavigateAccount: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit
@@ -170,6 +171,7 @@ fun MainScreen(
                 MainTab.SETTINGS -> SettingsScreen(
                     adbViewModel = adbViewModel,
                     onNavigateDebug = onNavigateDebug,
+                    onNavigateAdvancedSettings = onNavigateAdvancedSettings,
                     onRequestOverlayPermission = onRequestOverlayPermission,
                     onNavigateLogin = onNavigateLogin,
                     onNavigateAccount = onNavigateAccount

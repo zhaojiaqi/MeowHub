@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.PhonelinkSetup
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +43,7 @@ import com.tutu.meowhub.feature.account.AccountViewModel
 fun SettingsScreen(
     adbViewModel: AdbViewModel = viewModel(),
     onNavigateDebug: () -> Unit,
+    onNavigateAdvancedSettings: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit,
     onNavigateLogin: () -> Unit = {},
     onNavigateAccount: () -> Unit = {}
@@ -137,6 +139,8 @@ fun SettingsScreen(
                 onStartOverlay = { MeowOverlayService.start(context) },
                 onStopOverlay = { MeowOverlayService.stop(context) }
             )
+
+            AdvancedSettingsEntryCard(onNavigate = onNavigateAdvancedSettings)
 
             DebugEntryCard(onNavigateDebug = onNavigateDebug)
 
@@ -459,6 +463,42 @@ private fun OverlayControlCard(
                     Text(stringResource(R.string.btn_stop_overlay))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AdvancedSettingsEntryCard(onNavigate: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        onClick = onNavigate
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.advanced_settings_title), fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.advanced_settings_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
