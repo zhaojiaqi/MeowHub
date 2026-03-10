@@ -27,11 +27,24 @@ class AiSettingsManager(context: Context) {
     val isConfigured: Boolean
         get() = useOwnApiKey && apiKey.isNotBlank()
 
+    var tutuAppId: String
+        get() = prefs.getString(KEY_TUTU_APP_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TUTU_APP_ID, value.trim()).apply()
+
+    var tutuAppSecret: String
+        get() = prefs.getString(KEY_TUTU_APP_SECRET, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TUTU_APP_SECRET, value.trim()).apply()
+
+    val isTutuConfigured: Boolean
+        get() = tutuAppId.isNotBlank() && tutuAppSecret.isNotBlank()
+
     companion object {
         private const val KEY_USE_OWN_API_KEY = "use_own_api_key"
         private const val KEY_API_KEY = "api_key"
         private const val KEY_MODEL_ID = "model_id"
         private const val KEY_BASE_URL = "base_url"
+        private const val KEY_TUTU_APP_ID = "tutu_app_id"
+        private const val KEY_TUTU_APP_SECRET = "tutu_app_secret"
         private const val DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
 
         val AVAILABLE_MODELS = listOf(

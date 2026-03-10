@@ -38,7 +38,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
+import com.tutu.meowhub.core.terminal.OpenClawGatewayManager
+import com.tutu.meowhub.core.terminal.OpenClawInstaller
 import com.tutu.meowhub.feature.account.AccountViewModel
+import com.tutu.meowhub.feature.terminal.TerminalViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,6 +146,8 @@ fun SettingsScreen(
             )
 
             AdvancedSettingsEntryCard(onNavigate = onNavigateAdvancedSettings)
+
+            OpenClawSettingsCard()
 
             DebugEntryCard(onNavigateDebug = onNavigateDebug)
 

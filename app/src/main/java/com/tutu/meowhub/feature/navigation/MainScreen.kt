@@ -14,11 +14,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.outlined.Chat
-
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Store
-
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -32,7 +31,7 @@ import com.tutu.meowhub.R
 import com.tutu.meowhub.feature.chat.ChatScreen
 import com.tutu.meowhub.feature.market.MarketScreen
 import com.tutu.meowhub.feature.myskills.MySkillsScreen
-
+import com.tutu.meowhub.feature.terminal.TerminalScreen
 import com.tutu.meowhub.feature.settings.AdbSetupGuideDialog
 import com.tutu.meowhub.feature.settings.AdbSetupPreGuideDialog
 import com.tutu.meowhub.feature.settings.AdbSetupPromptDialog
@@ -46,6 +45,7 @@ enum class MainTab(
 ) {
     CHAT(R.string.tab_chat, Icons.Filled.Chat, Icons.Outlined.Chat),
     MARKET(R.string.tab_market, Icons.Filled.Store, Icons.Outlined.Store),
+    TERMINAL(R.string.tab_terminal, Icons.Filled.Terminal, Icons.Outlined.Terminal),
     MY_SKILLS(R.string.tab_my_skills, Icons.Filled.Person, Icons.Outlined.Person),
     SETTINGS(R.string.tab_settings, Icons.Filled.Settings, Icons.Outlined.Settings)
 }
@@ -189,6 +189,7 @@ fun MainScreen(
             when (tab) {
                 MainTab.CHAT -> ChatScreen()
                 MainTab.MARKET -> MarketScreen()
+                MainTab.TERMINAL -> TerminalScreen()
                 MainTab.MY_SKILLS -> MySkillsScreen()
                 MainTab.SETTINGS -> SettingsScreen(
                     adbViewModel = adbViewModel,

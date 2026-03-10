@@ -101,6 +101,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
 
     private val _isModelConfigured = MutableStateFlow(
         BuildConfig.DOUBAO_API_KEY.isNotBlank()
+            || (application as MeowApp).aiSettings.isConfigured
             || (application as MeowApp).meowAppAuth.getAccessToken() != null
     )
     val isModelConfigured: StateFlow<Boolean> = _isModelConfigured.asStateFlow()
@@ -260,6 +261,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             }
             val app = getApplication<MeowApp>()
             _isModelConfigured.value = BuildConfig.DOUBAO_API_KEY.isNotBlank()
+                || app.aiSettings.isConfigured
                 || app.meowAppAuth.getAccessToken() != null
                 || openClawInstaller.isModelConfigured()
         }
@@ -296,6 +298,18 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         }
 
         val app = getApplication<MeowApp>()
+        val aiSettings = app.aiSettings
+        if (aiSettings.isConfigured) {
+            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using user AI settings (model=${aiSettings.modelId})")
+            openClawInstaller.mergeOpenClawConfig(
+                apiKey = aiSettings.apiKey,
+                baseUrl = aiSettings.baseUrl,
+                modelId = aiSettings.modelId
+            )
+            _isModelConfigured.value = true
+            return
+        }
+
         val accessToken = app.meowAppAuth.getAccessToken()
         if (accessToken != null) {
             Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY but user logged in, using TutuAI")

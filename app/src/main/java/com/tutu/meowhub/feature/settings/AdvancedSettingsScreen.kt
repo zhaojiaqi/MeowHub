@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +37,10 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
     var baseUrl by remember { mutableStateOf(settingsManager.baseUrl) }
     var showApiKey by remember { mutableStateOf(false) }
     var modelDropdownExpanded by remember { mutableStateOf(false) }
+
+    var tutuAppId by remember { mutableStateOf(settingsManager.tutuAppId) }
+    var tutuAppSecret by remember { mutableStateOf(settingsManager.tutuAppSecret) }
+    var showTutuSecret by remember { mutableStateOf(false) }
 
     var testState by remember { mutableStateOf<TestState>(TestState.Idle) }
 
@@ -269,6 +274,76 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
                             else -> {}
                         }
                     }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.Link,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.tutu_connection_title),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        stringResource(R.string.tutu_connection_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = tutuAppId,
+                        onValueChange = {
+                            tutuAppId = it
+                            settingsManager.tutuAppId = it
+                        },
+                        label = { Text(stringResource(R.string.tutu_app_id_label)) },
+                        placeholder = { Text(stringResource(R.string.tutu_app_id_placeholder)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = tutuAppSecret,
+                        onValueChange = {
+                            tutuAppSecret = it
+                            settingsManager.tutuAppSecret = it
+                        },
+                        label = { Text(stringResource(R.string.tutu_app_secret_label)) },
+                        placeholder = { Text(stringResource(R.string.tutu_app_secret_placeholder)) },
+                        visualTransformation = if (showTutuSecret)
+                            VisualTransformation.None
+                        else
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = { showTutuSecret = !showTutuSecret }) {
+                                Text(
+                                    if (showTutuSecret) stringResource(R.string.hide)
+                                    else stringResource(R.string.show)
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
             }
         }

@@ -475,4 +475,12 @@
     <string name="term_btn_install_now">Install now</string>
     <string name="term_initializing">Initializing environment</string>
     <string name="term_install_failed">Installation failed</string>
+
+    <!-- TutuAI Connection -->
+    <string name="tutu_connection_title">TutuAI Connection</string>
+    <string name="tutu_connection_desc">Activate device Socket without login</string>
+    <string name="tutu_app_id_label">APP ID</string>
+    <string name="tutu_app_id_placeholder">Enter APP ID</string>
+    <string name="tutu_app_secret_label">APP Secret</string>
+    <string name="tutu_app_secret_placeholder">Enter APP Secret</string>
 </resources>

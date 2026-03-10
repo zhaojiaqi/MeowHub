@@ -131,6 +131,20 @@ class MeowApp : Application() {
                 }
             }
 
+            if (aiSettings.isTutuConfigured) {
+                Log.d(TAG, "Using user-configured TutuAI key: ${aiSettings.tutuAppId}")
+                val result = authManager.getToken(aiSettings.tutuAppId, aiSettings.tutuAppSecret)
+                when (result) {
+                    is TutuAuthManager.TokenResult.Success -> {
+                        tutuClient.connect(result.token, force = force)
+                        return@launch
+                    }
+                    is TutuAuthManager.TokenResult.Failure -> {
+                        Log.w(TAG, "User TutuAI key auth failed: ${result.message}")
+                    }
+                }
+            }
+
             if (APP_ID.isNotBlank() && APP_SECRET.isNotBlank()) {
                 val result = authManager.getToken(APP_ID, APP_SECRET)
                 Log.d(TAG, "Token result (secrets): ${result::class.simpleName}")

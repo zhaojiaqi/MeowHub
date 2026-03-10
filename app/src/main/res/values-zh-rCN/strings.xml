@@ -276,4 +276,12 @@
     <string name="term_btn_install_now">立即安装</string>
     <string name="term_initializing">正在初始化环境</string>
     <string name="term_install_failed">安装失败</string>
+
+    <!-- TutuAI Connection -->
+    <string name="tutu_connection_title">TutuAI 连接</string>
+    <string name="tutu_connection_desc">无需登录即可激活设备 Socket 通道</string>
+    <string name="tutu_app_id_label">APP ID</string>
+    <string name="tutu_app_id_placeholder">输入 APP ID</string>
+    <string name="tutu_app_secret_label">APP Secret</string>
+    <string name="tutu_app_secret_placeholder">输入 APP Secret</string>
 </resources>

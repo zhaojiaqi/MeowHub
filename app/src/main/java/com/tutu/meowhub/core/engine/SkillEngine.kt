@@ -1268,12 +1268,23 @@ Action: <action_name>(<params>)
 - long_press(point='<point>X Y</point>') — 长按
 - type(content='要输入的文字') — 输入文本
 - scroll(direction='up/down/left/right') — 滑动
+- drag(start_point='<point>X Y</point>', end_point='<point>X Y</point>') — 从起点拖拽到终点
+- open_app(app_name='应用名或包名') — 直接打开应用（如"微信""com.tencent.mm"），无需手动在桌面寻找图标
 - press_home() — 按Home键
 - press_back() — 按返回键
 - wait(seconds=N) — 等待N秒
+- query_device_info(type='apps') — 查询设备信息，type 可选值：apps（已安装应用列表）、battery（电池状态）、storage（存储空间）、wifi（Wi-Fi/网络信息）、bluetooth（蓝牙信息）、all（电池+存储概览）
 - finished(content='完成说明') — 任务完成
 
+优先策略：
+- 打开应用时，优先使用 open_app 并传入包名（如 com.tencent.mm）。常见应用的包名可以直接使用，无需查询。
+- 如果不确定包名，再用 query_device_info(type='apps') 查询已安装应用列表获取包名。
+- 不要通过截图在桌面寻找图标点击来打开应用。
+
 示例：
+Thought: 用户要求打开微信，微信的包名是 com.tencent.mm，直接打开
+Action: open_app(app_name='com.tencent.mm')
+
 Thought: 我看到了「赞」按钮在屏幕右侧中间位置
 Action: click(point='<point>890 450</point>')
 
