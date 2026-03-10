@@ -10,6 +10,7 @@ import com.tutu.meowhub.core.database.LocalSkillRepository
 import com.tutu.meowhub.core.database.MeowHubDatabase
 import com.tutu.meowhub.core.engine.*
 import com.tutu.meowhub.core.settings.AiSettingsManager
+import com.tutu.meowhub.core.settings.AppToolManager
 import com.tutu.meowhub.core.network.MeowHubApiClient
 import com.tutu.meowhub.core.socket.TutuSocketClient
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ class MeowApp : Application() {
     }
     val apiClient: MeowHubApiClient by lazy { MeowHubApiClient() }
     val aiSettings: AiSettingsManager by lazy { AiSettingsManager(this) }
+    val appToolManager: AppToolManager by lazy { AppToolManager(this) }
 
     val database: MeowHubDatabase by lazy { MeowHubDatabase.getInstance(this) }
     val skillRepository: LocalSkillRepository by lazy { LocalSkillRepository(database.skillDao()) }
@@ -68,7 +70,8 @@ class MeowApp : Application() {
             bridge = bridge,
             apiClient = apiClient,
             aiProviderFactory = { resolveAiProvider() },
-            promptHandler = null
+            promptHandler = null,
+            toolsContextProvider = { appToolManager.buildToolsContext() }
         )
     }
 
@@ -81,6 +84,7 @@ class MeowApp : Application() {
         }
         instance = this
         deviceCache
+        appToolManager.init()
         connectWithAuth()
     }
 
