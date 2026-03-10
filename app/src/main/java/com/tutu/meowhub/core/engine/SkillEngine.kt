@@ -138,6 +138,32 @@ class SkillEngine(
         runSkillInternal(skill)
     }
 
+    suspend fun runInstruction(instruction: String) {
+        reset()
+        _state.value = EngineState.LOADING
+        log("STEP", "▶ 执行指令: ${instruction.take(50)}")
+
+        val syntheticSkill = MeowSkillDetail(
+            slug = "_instruction",
+            displayName = instruction.take(30),
+            steps = listOf(
+                SkillStep(
+                    id = "ai_act_instruction",
+                    type = "ai_act",
+                    prompt = instruction,
+                    maxLoops = 20,
+                    label = instruction.take(30)
+                )
+            )
+        )
+
+        _currentSkill.value = syntheticSkill
+        _state.value = EngineState.RUNNING
+        shouldStop = false
+
+        runSkillInternal(syntheticSkill)
+    }
+
     suspend fun runSkill(slug: String) {
         reset()
         _state.value = EngineState.LOADING

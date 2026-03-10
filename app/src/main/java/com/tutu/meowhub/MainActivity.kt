@@ -21,6 +21,7 @@ import com.tutu.meowhub.feature.account.AccountScreen
 import com.tutu.meowhub.feature.account.LoginScreen
 import com.tutu.meowhub.feature.debug.DebugScreen
 import com.tutu.meowhub.feature.navigation.MainScreen
+import com.tutu.meowhub.feature.settings.AdvancedSettingsScreen
 import com.tutu.meowhub.ui.theme.MeowHubTheme
 
 class MainActivity : ComponentActivity() {
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppScreen { MAIN, DEBUG, LOGIN, ACCOUNT }
+private enum class AppScreen { MAIN, DEBUG, LOGIN, ACCOUNT, ADVANCED_SETTINGS }
 
 @Composable
 fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
@@ -135,6 +136,7 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
         when (screen) {
             AppScreen.MAIN -> MainScreen(
                 onNavigateDebug = { currentScreen = AppScreen.DEBUG },
+                onNavigateAdvancedSettings = { currentScreen = AppScreen.ADVANCED_SETTINGS },
                 onNavigateLogin = { currentScreen = AppScreen.LOGIN },
                 onNavigateAccount = { currentScreen = AppScreen.ACCOUNT },
                 onRequestOverlayPermission = onRequestOverlayPermission
@@ -142,6 +144,7 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
             AppScreen.DEBUG -> DebugScreen(onBack = { currentScreen = AppScreen.MAIN })
             AppScreen.LOGIN -> LoginScreen(onBack = { currentScreen = AppScreen.MAIN })
             AppScreen.ACCOUNT -> AccountScreen(onBack = { currentScreen = AppScreen.MAIN })
+            AppScreen.ADVANCED_SETTINGS -> AdvancedSettingsScreen(onBack = { currentScreen = AppScreen.MAIN })
         }
     }
 }

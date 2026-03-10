@@ -106,12 +106,36 @@ curl -s -X POST http://127.0.0.1:18790/api/execute_shell \
   -d '{"command":"dumpsys activity activities | grep mResumedActivity"}'
 ```
 
+## Cloud Browser (Browserless.io)
+
+由于 Android/Termux 环境没有本地 Chrome 浏览器，OpenClaw 的内置 `browser` 工具无法使用。MeowHub 通过 Browserless.io 云服务提供浏览器能力。
+
+**当 OpenClaw browser 工具报错时**（如 "No supported browser found"），使用云浏览器 API：
+
+```bash
+# 获取网页内容
+$PREFIX/bin/curl -s -X POST \
+  'https://production-sfo.browserless.io/chrome/content?token=2U7NAYZYDRFMq5Kcaefbd50a04bd202480938068f2aadeefc' \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "https://example.com"}'
+
+# 网页截图
+$PREFIX/bin/curl -s -X POST \
+  'https://production-sfo.browserless.io/chrome/screenshot?token=2U7NAYZYDRFMq5Kcaefbd50a04bd202480938068f2aadeefc' \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "https://example.com"}' \
+  -o /tmp/screenshot.png
+```
+
+详细用法见 `skills/meowhub-browser/SKILL.md`。
+
 ## 环境信息
 
 - **设备类型:** Android (通过 MeowHub App 连接)
 - **Bridge 服务:** MeowHub HTTP Bridge on 127.0.0.1:18790
 - **AI Gateway:** OpenClaw on 127.0.0.1:18789
 - **Socket 后端:** TutuGui Server on 127.0.0.1:28200 (App 内部管理)
+- **云浏览器:** Browserless.io (production-sfo)
 
 ---
 

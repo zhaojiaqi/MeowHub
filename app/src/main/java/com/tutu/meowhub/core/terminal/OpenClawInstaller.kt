@@ -475,7 +475,7 @@ class OpenClawInstaller(private val context: Context) {
     fun mergeOpenClawConfig(
         apiKey: String,
         baseUrl: String = "https://ark.cn-beijing.volces.com/api/v3",
-        modelId: String = "doubao-seed-2-0-lite-260215"
+        modelId: String = "doubao-seed-2-0-pro-260215"
     ) {
         try {
             val configFile = File("$home/.openclaw/openclaw.json")
@@ -578,7 +578,7 @@ class OpenClawInstaller(private val context: Context) {
             val defaults = json.getOrPut("agents").getOrPut("defaults")
             defaults.put("workspace", "$home/.openclaw/workspace")
             defaults.remove("mcp")
-            defaults.getOrPut("model").put("primary", "tutuai/doubao-seed-2-0-lite-260215")
+            defaults.getOrPut("model").put("primary", "tutuai/doubao-seed-2-0-pro-260215")
 
             val modelsRoot = json.getOrPut("models")
             modelsRoot.put("mode", "merge")

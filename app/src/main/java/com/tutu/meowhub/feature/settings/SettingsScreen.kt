@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.PhonelinkSetup
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,16 +38,14 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
-import com.tutu.meowhub.core.terminal.OpenClawGatewayManager
-import com.tutu.meowhub.core.terminal.OpenClawInstaller
 import com.tutu.meowhub.feature.account.AccountViewModel
-import com.tutu.meowhub.feature.terminal.TerminalViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     adbViewModel: AdbViewModel = viewModel(),
     onNavigateDebug: () -> Unit,
+    onNavigateAdvancedSettings: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit,
     onNavigateLogin: () -> Unit = {},
     onNavigateAccount: () -> Unit = {}
@@ -143,7 +142,7 @@ fun SettingsScreen(
                 onStopOverlay = { MeowOverlayService.stop(context) }
             )
 
-            OpenClawSettingsCard()
+            AdvancedSettingsEntryCard(onNavigate = onNavigateAdvancedSettings)
 
             DebugEntryCard(onNavigateDebug = onNavigateDebug)
 
@@ -471,6 +470,42 @@ private fun OverlayControlCard(
 }
 
 @Composable
+private fun AdvancedSettingsEntryCard(onNavigate: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        onClick = onNavigate
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.advanced_settings_title), fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.advanced_settings_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
 private fun OpenClawSettingsCard() {
     val context = LocalContext.current
     val terminalVm: TerminalViewModel = viewModel()
@@ -488,10 +523,14 @@ private fun OpenClawSettingsCard() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Filled.SmartToy,
+                    Icons.Outlined.Settings,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )

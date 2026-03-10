@@ -59,6 +59,8 @@
     <string name="btn_start_overlay">Start Overlay</string>
     <string name="btn_stop_overlay">Stop Overlay</string>
     <string name="quick_controls">Quick Controls</string>
+    <string name="instruction_hint">Tell me what to do…</string>
+    <string name="instruction_send">Send</string>
 
     <!-- Overlay actions -->
     <string name="action_home">Home</string>
@@ -428,6 +430,27 @@
     <string name="param_vd_key_action">Action (0=DOWN, 1=UP, auto if omit)</string>
     <string name="param_repeat">Repeat</string>
     <string name="param_meta_state">Meta State</string>
+
+    <!-- Voice & Permissions -->
+    <string name="voice_input">Voice input</string>
+    <string name="perm_microphone_name">Microphone Permission</string>
+    <string name="perm_microphone_desc">Voice input for instructions</string>
+
+    <!-- Advanced Settings -->
+    <string name="advanced_settings_title">Advanced Settings</string>
+    <string name="advanced_settings_desc">Configure AI API key and model</string>
+    <string name="ai_api_settings">AI API Settings</string>
+    <string name="use_own_api_key">Use my API key</string>
+    <string name="use_own_api_key_desc">Use your own API key for AI actions instead of app credits</string>
+    <string name="api_key_label">API Key</string>
+    <string name="api_key_placeholder">Enter your API key</string>
+    <string name="model_id_label">Model</string>
+    <string name="base_url_label">Base URL</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+    <string name="test_api">Test Connection</string>
+    <string name="test_api_success">Success: %1$s</string>
+    <string name="test_api_fail">Failed: %1$s</string>
 
     <!-- Terminal (MeowClaw) -->
     <string name="term_checking_env">Checking terminal environment…</string>
