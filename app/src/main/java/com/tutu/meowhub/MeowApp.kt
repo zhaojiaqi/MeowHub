@@ -9,6 +9,7 @@ import com.tutu.meowhub.core.auth.TutuAuthManager
 import com.tutu.meowhub.core.database.LocalSkillRepository
 import com.tutu.meowhub.core.database.MeowHubDatabase
 import com.tutu.meowhub.core.engine.*
+import com.tutu.meowhub.core.settings.AiSettingsManager
 import com.tutu.meowhub.core.network.MeowHubApiClient
 import com.tutu.meowhub.core.socket.TutuSocketClient
 import kotlinx.coroutines.CoroutineScope
@@ -29,11 +30,19 @@ class MeowApp : Application() {
         DeviceInfoCache(tutuClient).also { it.observeConnection() }
     }
     val apiClient: MeowHubApiClient by lazy { MeowHubApiClient() }
+    val aiSettings: AiSettingsManager by lazy { AiSettingsManager(this) }
 
     val database: MeowHubDatabase by lazy { MeowHubDatabase.getInstance(this) }
     val skillRepository: LocalSkillRepository by lazy { LocalSkillRepository(database.skillDao()) }
 
     fun resolveAiProvider(): AiProvider? {
+        if (aiSettings.isConfigured) {
+            return DoubaoAiProvider(
+                apiKey = aiSettings.apiKey,
+                baseUrl = aiSettings.baseUrl,
+                modelId = aiSettings.modelId
+            )
+        }
         if (meowAppAuth.isLoggedIn.value) {
             return MeowAppAiProvider(meowAppAuth)
         }
@@ -44,7 +53,7 @@ class MeowApp : Application() {
     }
 
     val hasAiCapability: Boolean
-        get() = meowAppAuth.isLoggedIn.value || BuildConfig.DOUBAO_API_KEY.isNotBlank()
+        get() = aiSettings.isConfigured || meowAppAuth.isLoggedIn.value || BuildConfig.DOUBAO_API_KEY.isNotBlank()
 
     private val _loginRequiredEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val loginRequiredEvent: SharedFlow<String> = _loginRequiredEvent.asSharedFlow()
