@@ -262,6 +262,9 @@
     <string name="test_api">测试连接</string>
     <string name="test_api_success">成功: %1$s</string>
     <string name="test_api_fail">失败: %1$s</string>
+    <string name="detect_models">检测</string>
+    <string name="models_detected">检测到 %1$d 个模型</string>
+    <string name="fetch_models_error">检测失败: %1$s</string>
 
     <!-- Terminal (MeowClaw) -->
     <string name="term_checking_env">检查终端环境…</string>

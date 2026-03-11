@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +23,12 @@ import androidx.compose.ui.unit.sp
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.engine.DoubaoAiProvider
 import com.tutu.meowhub.core.settings.AiSettingsManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.*
+import java.net.HttpURLConnection
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +49,14 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
     var showTutuSecret by remember { mutableStateOf(false) }
 
     var testState by remember { mutableStateOf<TestState>(TestState.Idle) }
+
+    // Model fetching states
+    var fetchedModels by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isFetchingModels by remember { mutableStateOf(false) }
+    var fetchModelsError by remember { mutableStateOf<String?>(null) }
+
+    // Effective model list: fetched models if available, otherwise default list
+    val effectiveModels = if (fetchedModels.isNotEmpty()) fetchedModels else AiSettingsManager.AVAILABLE_MODELS
 
     Scaffold(
         topBar = {
@@ -167,7 +181,7 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
                                 expanded = modelDropdownExpanded,
                                 onDismissRequest = { modelDropdownExpanded = false }
                             ) {
-                                AiSettingsManager.AVAILABLE_MODELS.forEach { model ->
+                                effectiveModels.forEach { model ->
                                     DropdownMenuItem(
                                         text = { Text(model) },
                                         onClick = {
@@ -182,17 +196,87 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
 
                         Spacer(Modifier.height(12.dp))
 
-                        OutlinedTextField(
-                            value = baseUrl,
-                            onValueChange = {
-                                baseUrl = it
-                                settingsManager.baseUrl = it
-                            },
-                            label = { Text(stringResource(R.string.base_url_label)) },
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp)
-                        )
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            OutlinedTextField(
+                                value = baseUrl,
+                                onValueChange = {
+                                    baseUrl = it
+                                    settingsManager.baseUrl = it
+                                    // Clear fetched models when URL changes
+                                    fetchedModels = emptyList()
+                                    fetchModelsError = null
+                                },
+                                label = { Text(stringResource(R.string.base_url_label)) },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            OutlinedButton(
+                                onClick = {
+                                    isFetchingModels = true
+                                    fetchModelsError = null
+                                    scope.launch {
+                                        try {
+                                            val models = fetchModelsFromApi(
+                                                baseUrl = baseUrl.trim(),
+                                                apiKey = apiKey.trim()
+                                            )
+                                            fetchedModels = models
+                                            // Auto-select first model if current selection is not in the list
+                                            if (models.isNotEmpty() && selectedModel !in models) {
+                                                selectedModel = models.first()
+                                                settingsManager.modelId = selectedModel
+                                            }
+                                        } catch (e: Exception) {
+                                            fetchModelsError = e.message ?: "Unknown error"
+                                        } finally {
+                                            isFetchingModels = false
+                                        }
+                                    }
+                                },
+                                enabled = apiKey.isNotBlank() && baseUrl.isNotBlank() && !isFetchingModels,
+                                modifier = Modifier.height(56.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                if (isFetchingModels) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.detect_models))
+                            }
+                        }
+
+                        // Show fetch result feedback
+                        if (fetchedModels.isNotEmpty()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.models_detected, fetchedModels.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        if (fetchModelsError != null) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.fetch_models_error, fetchModelsError!!),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
 
                         Spacer(Modifier.height(16.dp))
                         HorizontalDivider()
@@ -349,6 +433,38 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
         }
     }
 }
+
+/**
+ * Fetch available models from OpenAI-compatible /models endpoint.
+ */
+private suspend fun fetchModelsFromApi(baseUrl: String, apiKey: String): List<String> =
+    withContext(Dispatchers.IO) {
+        val url = URL("${baseUrl.trimEnd('/')}/models")
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 10_000
+            readTimeout = 10_000
+            setRequestProperty("Authorization", "Bearer $apiKey")
+        }
+
+        try {
+            if (conn.responseCode !in 200..299) {
+                val err = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                throw Exception("HTTP ${conn.responseCode}: $err")
+            }
+
+            val responseText = conn.inputStream.bufferedReader().use { it.readText() }
+            val json = Json { ignoreUnknownKeys = true }
+            val response = json.decodeFromString<JsonObject>(responseText)
+
+            val data = response["data"]?.jsonArray ?: return@withContext emptyList()
+            data.mapNotNull { item ->
+                item.jsonObject["id"]?.jsonPrimitive?.contentOrNull
+            }.sorted()
+        } finally {
+            conn.disconnect()
+        }
+    }
 
 private sealed class TestState {
     data object Idle : TestState()

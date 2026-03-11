@@ -283,22 +283,10 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun writeOpenClawConfigFromBuildConfig() {
-        val apiKey = BuildConfig.DOUBAO_API_KEY
-        if (apiKey.isNotBlank()) {
-            val baseUrl = BuildConfig.DOUBAO_BASE_URL
-            val modelId = BuildConfig.DOUBAO_MODEL_ID
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: merging config with model=$modelId")
-            openClawInstaller.mergeOpenClawConfig(
-                apiKey = apiKey,
-                baseUrl = baseUrl,
-                modelId = modelId
-            )
-            _isModelConfigured.value = true
-            return
-        }
-
         val app = getApplication<MeowApp>()
         val aiSettings = app.aiSettings
+
+        // Priority 1: User-configured API (highest priority)
         if (aiSettings.isConfigured) {
             Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using user AI settings (model=${aiSettings.modelId})")
             openClawInstaller.mergeOpenClawConfig(
@@ -310,15 +298,31 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
+        // Priority 2: Login token (TutuAI)
         val accessToken = app.meowAppAuth.getAccessToken()
         if (accessToken != null) {
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY but user logged in, using TutuAI")
+            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using TutuAI (user logged in)")
             openClawInstaller.mergeTutuAiConfig(accessToken)
             _isModelConfigured.value = true
             return
         }
 
-        Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no DOUBAO_API_KEY and not logged in, merging minimal config")
+        // Priority 3: Build config (compile-time embedded key)
+        val apiKey = BuildConfig.DOUBAO_API_KEY
+        if (apiKey.isNotBlank()) {
+            val baseUrl = BuildConfig.DOUBAO_BASE_URL
+            val modelId = BuildConfig.DOUBAO_MODEL_ID
+            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using build config (model=$modelId)")
+            openClawInstaller.mergeOpenClawConfig(
+                apiKey = apiKey,
+                baseUrl = baseUrl,
+                modelId = modelId
+            )
+            _isModelConfigured.value = true
+            return
+        }
+
+        Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no API config available, merging minimal config")
         openClawInstaller.mergeMinimalConfig()
         _isModelConfigured.value = openClawInstaller.isModelConfigured()
     }
