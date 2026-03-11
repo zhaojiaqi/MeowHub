@@ -9,12 +9,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
 import com.tutu.meowhub.feature.account.AccountScreen
@@ -24,6 +29,7 @@ import com.tutu.meowhub.feature.navigation.MainScreen
 import com.tutu.meowhub.feature.settings.AdvancedSettingsScreen
 import com.tutu.meowhub.feature.settings.AppToolsScreen
 import com.tutu.meowhub.ui.theme.MeowHubTheme
+import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
 
@@ -65,11 +71,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppScreen { MAIN, DEBUG, LOGIN, ACCOUNT, ADVANCED_SETTINGS, APP_TOOLS }
+// Navigation routes using type-safe navigation
+@Serializable object RouteMain
+@Serializable object RouteDebug
+@Serializable object RouteLogin
+@Serializable object RouteAccount
+@Serializable object RouteAdvancedSettings
+@Serializable object RouteAppTools
 
 @Composable
 fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
-    var currentScreen by remember { mutableStateOf(AppScreen.MAIN) }
+    val navController = rememberNavController()
     var showLoginPrompt by remember { mutableStateOf(false) }
     var loginPromptReason by remember { mutableStateOf("") }
     var showSocketAuthDialog by remember { mutableStateOf(false) }
@@ -99,7 +111,7 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     showSocketAuthDialog = false
-                    currentScreen = AppScreen.LOGIN
+                    navController.navigate(RouteLogin)
                 }) {
                     Text(stringResource(R.string.btn_go_login))
                 }
@@ -120,7 +132,7 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     showLoginPrompt = false
-                    currentScreen = AppScreen.LOGIN
+                    navController.navigate(RouteLogin)
                 }) {
                     Text("去登录")
                 }
@@ -133,21 +145,38 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
         )
     }
 
-    Crossfade(targetState = currentScreen, label = "app_screen") { screen ->
-        when (screen) {
-            AppScreen.MAIN -> MainScreen(
-                onNavigateDebug = { currentScreen = AppScreen.DEBUG },
-                onNavigateAdvancedSettings = { currentScreen = AppScreen.ADVANCED_SETTINGS },
-                onNavigateAppTools = { currentScreen = AppScreen.APP_TOOLS },
-                onNavigateLogin = { currentScreen = AppScreen.LOGIN },
-                onNavigateAccount = { currentScreen = AppScreen.ACCOUNT },
+    NavHost(
+        navController = navController,
+        startDestination = RouteMain,
+        enterTransition = { slideInHorizontally(tween(300)) { it } },
+        exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } },
+        popEnterTransition = { slideInHorizontally(tween(300)) { -it / 3 } },
+        popExitTransition = { slideOutHorizontally(tween(300)) { it } }
+    ) {
+        composable<RouteMain> {
+            MainScreen(
+                onNavigateDebug = { navController.navigate(RouteDebug) },
+                onNavigateAdvancedSettings = { navController.navigate(RouteAdvancedSettings) },
+                onNavigateAppTools = { navController.navigate(RouteAppTools) },
+                onNavigateLogin = { navController.navigate(RouteLogin) },
+                onNavigateAccount = { navController.navigate(RouteAccount) },
                 onRequestOverlayPermission = onRequestOverlayPermission
             )
-            AppScreen.DEBUG -> DebugScreen(onBack = { currentScreen = AppScreen.MAIN })
-            AppScreen.LOGIN -> LoginScreen(onBack = { currentScreen = AppScreen.MAIN })
-            AppScreen.ACCOUNT -> AccountScreen(onBack = { currentScreen = AppScreen.MAIN })
-            AppScreen.ADVANCED_SETTINGS -> AdvancedSettingsScreen(onBack = { currentScreen = AppScreen.MAIN })
-            AppScreen.APP_TOOLS -> AppToolsScreen(onBack = { currentScreen = AppScreen.MAIN })
+        }
+        composable<RouteDebug> {
+            DebugScreen(onBack = { navController.popBackStack() })
+        }
+        composable<RouteLogin> {
+            LoginScreen(onBack = { navController.popBackStack() })
+        }
+        composable<RouteAccount> {
+            AccountScreen(onBack = { navController.popBackStack() })
+        }
+        composable<RouteAdvancedSettings> {
+            AdvancedSettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable<RouteAppTools> {
+            AppToolsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

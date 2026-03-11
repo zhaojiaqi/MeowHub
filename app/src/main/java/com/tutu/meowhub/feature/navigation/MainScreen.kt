@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.tutu.meowhub.R
 import com.tutu.meowhub.feature.chat.ChatScreen
 import com.tutu.meowhub.feature.market.MarketScreen
@@ -60,7 +61,7 @@ fun MainScreen(
     onRequestOverlayPermission: () -> Unit
 ) {
     val context = LocalContext.current
-    var currentTab by remember { mutableStateOf(MainTab.CHAT) }
+    var currentTab by rememberSaveable { mutableStateOf(MainTab.CHAT) }
     val adbViewModel: AdbViewModel = viewModel()
     val autoResult by adbViewModel.autoConnectResult.collectAsState()
 
