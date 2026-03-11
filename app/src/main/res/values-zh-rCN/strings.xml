@@ -139,6 +139,12 @@
     <string name="notification_content">喵控悬浮窗运行中</string>
     <string name="notification_stop">停止</string>
 
+    <!-- Terminal Notification -->
+    <string name="terminal_notification_channel_name">终端服务</string>
+    <string name="terminal_notification_channel_desc">喵控终端正在后台运行</string>
+    <string name="terminal_notification_content">终端运行中</string>
+    <string name="terminal_notification_stop">停止</string>
+
     <!-- Command categories -->
     <string name="cat_input_control">1. 输入控制</string>
     <string name="cat_system_commands">2. 系统命令</string>

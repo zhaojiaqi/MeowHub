@@ -45,6 +45,11 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <service
+            android:name=".core.service.TerminalForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

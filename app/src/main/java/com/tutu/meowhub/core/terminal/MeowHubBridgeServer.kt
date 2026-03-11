@@ -138,12 +138,19 @@ class MeowHubBridgeServer(
                 "device_info" -> requireConnected { handleDeviceInfo(body) }
                 "read_ui_text" -> requireConnected { handleReadUiText(body) }
                 "long_click" -> requireConnected { handleLongClick(body) }
-                "list_packages" -> requireConnected { handleListPackages() }
+                "list_packages" -> requireConnected { handleListPackages(body) }
                 "accept_call" -> requireConnected { handleAcceptCall() }
                 "end_call" -> requireConnected { handleEndCall() }
                 "make_call" -> requireConnected { handleMakeCall(body) }
                 "open_audio_channel" -> requireConnected { handleOpenAudioChannel(body) }
                 "close_audio_channel" -> requireConnected { handleCloseAudioChannel() }
+                "send_sms" -> requireConnected { handleSendSms(body) }
+                "read_sms" -> requireConnected { handleReadSms(body) }
+                "get_app_info" -> requireConnected { handleGetAppInfo(body) }
+                "force_stop_app" -> requireConnected { handleForceStopApp(body) }
+                "uninstall_app" -> requireConnected { handleUninstallApp(body) }
+                "install_apk" -> requireConnected { handleInstallApk(body) }
+                "clear_app_data" -> requireConnected { handleClearAppData(body) }
                 else -> 404 to buildJsonObject { put("error", "Not found: $endpoint") }
             }
         } catch (e: Exception) {
@@ -290,19 +297,11 @@ class MeowHubBridgeServer(
         return buildJsonObject { put("ok", true); put("action", "long_click"); put("x", x); put("y", y) }
     }
 
-    private fun handleListPackages(): JsonObject {
-        val apps = bridge.deviceCache.installedApps.value
-        return buildJsonObject {
-            putJsonArray("packages") {
-                apps.forEach { app ->
-                    add(buildJsonObject {
-                        put("label", app.label)
-                        put("packageName", app.packageName)
-                    })
-                }
-            }
-            put("count", apps.size)
-        }
+    private suspend fun handleListPackages(body: JsonObject?): JsonObject {
+        val thirdPartyOnly = body?.get("thirdPartyOnly")?.jsonPrimitive?.booleanOrNull ?: true
+        val includeVersions = body?.get("includeVersions")?.jsonPrimitive?.booleanOrNull ?: false
+        val resp = bridge.listPackages(thirdPartyOnly, includeVersions)
+        return resp ?: buildJsonObject { put("error", "list_packages failed") }
     }
 
     private fun handleAcceptCall(): JsonObject {
@@ -330,6 +329,59 @@ class MeowHubBridgeServer(
     private suspend fun handleCloseAudioChannel(): JsonObject {
         val resp = bridge.closeAudioChannel()
         return resp ?: buildJsonObject { put("ok", true); put("action", "close_audio_channel") }
+    }
+
+    private suspend fun handleSendSms(body: JsonObject?): JsonObject {
+        val destination = body?.get("destination")?.jsonPrimitive?.contentOrNull ?: ""
+        val text = body?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        if (destination.isBlank() || text.isBlank()) {
+            return buildJsonObject { put("error", "destination and text are required") }
+        }
+        val resp = bridge.sendSms(destination, text)
+        return resp ?: buildJsonObject { put("error", "send_sms failed") }
+    }
+
+    private suspend fun handleReadSms(body: JsonObject?): JsonObject {
+        val limit = body?.get("limit")?.jsonPrimitive?.intOrNull ?: 20
+        val unreadOnly = body?.get("unreadOnly")?.jsonPrimitive?.booleanOrNull ?: false
+        val resp = bridge.readSms(limit, unreadOnly)
+        return resp ?: buildJsonObject { put("error", "read_sms failed") }
+    }
+
+    private suspend fun handleGetAppInfo(body: JsonObject?): JsonObject {
+        val pkg = body?.get("package")?.jsonPrimitive?.contentOrNull ?: ""
+        if (pkg.isBlank()) return buildJsonObject { put("error", "package is required") }
+        val resp = bridge.getAppInfo(pkg)
+        return resp ?: buildJsonObject { put("error", "get_app_info failed") }
+    }
+
+    private suspend fun handleForceStopApp(body: JsonObject?): JsonObject {
+        val pkg = body?.get("package")?.jsonPrimitive?.contentOrNull ?: ""
+        if (pkg.isBlank()) return buildJsonObject { put("error", "package is required") }
+        val resp = bridge.forceStopApp(pkg)
+        return resp ?: buildJsonObject { put("error", "force_stop_app failed") }
+    }
+
+    private suspend fun handleUninstallApp(body: JsonObject?): JsonObject {
+        val pkg = body?.get("package")?.jsonPrimitive?.contentOrNull ?: ""
+        val keepData = body?.get("keepData")?.jsonPrimitive?.booleanOrNull ?: false
+        if (pkg.isBlank()) return buildJsonObject { put("error", "package is required") }
+        val resp = bridge.uninstallApp(pkg, keepData)
+        return resp ?: buildJsonObject { put("error", "uninstall_app failed") }
+    }
+
+    private suspend fun handleInstallApk(body: JsonObject?): JsonObject {
+        val path = body?.get("path")?.jsonPrimitive?.contentOrNull ?: ""
+        if (path.isBlank()) return buildJsonObject { put("error", "path is required") }
+        val resp = bridge.installApk(path)
+        return resp ?: buildJsonObject { put("error", "install_apk failed") }
+    }
+
+    private suspend fun handleClearAppData(body: JsonObject?): JsonObject {
+        val pkg = body?.get("package")?.jsonPrimitive?.contentOrNull ?: ""
+        if (pkg.isBlank()) return buildJsonObject { put("error", "package is required") }
+        val resp = bridge.clearAppData(pkg)
+        return resp ?: buildJsonObject { put("error", "clear_app_data failed") }
     }
 
     private fun sendHttpResponse(client: Socket, code: Int, json: JsonObject) {

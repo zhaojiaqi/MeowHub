@@ -80,7 +80,7 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/make_call -H 'Content-Typ
 {"image": "<base64-jpeg>", "data": "<base64-jpeg>", "width": 1080, "height": 2340, "mimeType": "image/jpeg"}
 ```
 
-## Available Tools (21)
+## Available Tools (29)
 
 ### Connection
 
@@ -96,8 +96,7 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/make_call -H 'Content-Typ
 | `get_ui_tree` | `/api/get_ui_tree` | POST | (none) |
 | `find_element` | `/api/find_element` | POST | text, resourceId, className |
 | `read_ui_text` | `/api/read_ui_text` | POST | filter, exclude |
-| `get_device_info` | `/api/device_info` | POST | type: apps/battery/storage/network/bluetooth/all |
-| `list_packages` | `/api/list_packages` | POST | (none) |
+| `get_device_info` | `/api/device_info` | POST | type: apps/battery/storage/network/all |
 
 ### Touch & Input
 
@@ -111,12 +110,30 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/make_call -H 'Content-Typ
 | `press_key` | `/api/press_key` | POST | key: home/back/power/recent/volume_up/volume_down/enter |
 | `click_by_text` | `/api/click_by_text` | POST | text, index(if multiple) |
 
+### App Management
+
+| Tool | Endpoint | Method | Key Parameters |
+|------|----------|--------|---------------|
+| `open_app` | `/api/open_app` | POST | **name (必须是包名，如 `com.tencent.mm`)** |
+| `list_packages` | `/api/list_packages` | POST | thirdPartyOnly(bool), includeVersions(bool) |
+| `get_app_info` | `/api/get_app_info` | POST | package (package name) |
+| `force_stop_app` | `/api/force_stop_app` | POST | package (package name) |
+| `uninstall_app` | `/api/uninstall_app` | POST | package, keepData(bool) |
+| `install_apk` | `/api/install_apk` | POST | path (APK path on device) |
+| `clear_app_data` | `/api/clear_app_data` | POST | package (package name) |
+
 ### System
 
 | Tool | Endpoint | Method | Key Parameters |
 |------|----------|--------|---------------|
-| `open_app` | `/api/open_app` | POST | name (app name or package name) |
-| `execute_shell` | `/api/execute_shell` | POST | command |
+| `execute_shell` | `/api/execute_shell` | POST | command, timeout(sec) |
+
+### SMS
+
+| Tool | Endpoint | Method | Key Parameters |
+|------|----------|--------|---------------|
+| `send_sms` | `/api/send_sms` | POST | destination (phone number), text |
+| `read_sms` | `/api/read_sms` | POST | limit(int), unreadOnly(bool) |
 
 ### Call & Audio
 
@@ -190,19 +207,55 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/click_by_text \
 $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/read_ui_text \
   -H 'Content-Type: application/json' -d '{}'
 
-# Execute shell command
+# Device info (battery, network, storage, memory, display, foreground app)
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/device_info \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"all"}'
+
+# Execute shell command (response: {"output":"..."})
 $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/execute_shell \
   -H 'Content-Type: application/json' \
   -d '{"command":"wm size"}'
 
-# Device info
-$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/device_info \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"battery"}'
-
-# List packages
+# List installed packages (third party with versions)
 $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/list_packages \
-  -H 'Content-Type: application/json' -d '{}'
+  -H 'Content-Type: application/json' \
+  -d '{"thirdPartyOnly":true,"includeVersions":true}'
+
+# Get app details
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/get_app_info \
+  -H 'Content-Type: application/json' \
+  -d '{"package":"com.tencent.mm"}'
+
+# Force stop app
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/force_stop_app \
+  -H 'Content-Type: application/json' \
+  -d '{"package":"com.example.app"}'
+
+# Uninstall app
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/uninstall_app \
+  -H 'Content-Type: application/json' \
+  -d '{"package":"com.example.app","keepData":false}'
+
+# Install APK from device path
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/install_apk \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"/sdcard/Download/app.apk"}'
+
+# Clear app data
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/clear_app_data \
+  -H 'Content-Type: application/json' \
+  -d '{"package":"com.example.app"}'
+
+# Send SMS
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/send_sms \
+  -H 'Content-Type: application/json' \
+  -d '{"destination":"13800138000","text":"Hello"}'
+
+# Read SMS (recent 5, unread only)
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/read_sms \
+  -H 'Content-Type: application/json' \
+  -d '{"limit":5,"unreadOnly":true}'
 
 # Accept incoming call
 $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/accept_call \
@@ -235,21 +288,56 @@ $PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/close_audio_channel \
 
 When you get a 503, tell the user that the MeowHub device connection is not active and they may need to check TutuGui Server status.
 
-## Common App Package Names
+## ⚠️ 应用包名规则（open_app / force_stop_app / get_app_info 等）
 
+**所有涉及应用的 API 必须传入包名（如 `com.tencent.mm`），绝对不能传入中文名或英文显示名（如"微信""WeChat"）。**
+
+### 常用应用包名速查（直接使用，无需查询）
+
+| 用户说 | 你必须传 |
+|-------|---------|
+| 微信 / WeChat | `com.tencent.mm` |
+| QQ | `com.tencent.mobileqq` |
+| 抖音 / TikTok | `com.ss.android.ugc.aweme` |
+| 小红书 | `com.xingin.xhs` |
+| 淘宝 | `com.taobao.taobao` |
+| 支付宝 | `com.eg.android.AlipayGphone` |
+| 美团 | `com.sankuai.meituan` |
+| 京东 | `com.jingdong.app.mall` |
+| 拼多多 | `com.xunmeng.pinduoduo` |
+| 高德地图 | `com.autonavi.minimap` |
+| 百度地图 | `com.baidu.BaiduMap` |
+| 哔哩哔哩 / B站 | `tv.danmaku.bili` |
+| 网易云音乐 | `com.netease.cloudmusic` |
+| QQ音乐 | `com.tencent.qqmusic` |
+| 微博 | `com.sina.weibo` |
+| 今日头条 | `com.ss.android.article.news` |
+| 快手 | `com.smile.gifmaker` |
+| 设置 / Settings | `com.android.settings` |
+| Chrome | `com.android.chrome` |
+| 短信 / Messages | `com.android.mms` |
+| 电话 / Dialer | `com.android.dialer` |
+| 相机 / Camera | `com.android.camera2` |
+| 日历 / Calendar | `com.android.calendar` |
+| 时钟 / Clock | `com.android.deskclock` |
+| 计算器 | `com.android.calculator2` |
+| 文件管理器 | `com.android.documentsui` |
+
+### 不认识的应用 → 先查再开
+
+如果用户提到的应用不在上表中，**必须先调用 `list_packages` 查询包名**，然后再用包名调用 `open_app`：
+
+```bash
+# 第一步：查找包名
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/list_packages -H 'Content-Type: application/json' -d '{"thirdPartyOnly":true}'
+# 从返回的 packages 列表中找到匹配的包名
+
+# 第二步：用包名打开
+$PREFIX/bin/curl -s -X POST http://127.0.0.1:18790/api/open_app -H 'Content-Type: application/json' -d '{"name":"com.xxx.xxx"}'
 ```
-com.tencent.mm           — WeChat (微信)
-com.tencent.mobileqq     — QQ
-com.ss.android.ugc.aweme — TikTok/Douyin (抖音)
-com.xingin.xhs           — Xiaohongshu (小红书)
-com.taobao.taobao        — Taobao (淘宝)
-com.sankuai.meituan      — Meituan (美团)
-com.android.settings     — Settings (系统设置)
-com.android.chrome       — Chrome
-com.android.mms          — Messages (短信)
-com.android.dialer       — Phone (电话)
-com.android.camera2      — Camera (相机)
-```
+
+**错误示范** ❌: `{"name":"微信"}` `{"name":"WeChat"}` `{"name":"抖音"}`
+**正确示范** ✅: `{"name":"com.tencent.mm"}` `{"name":"com.ss.android.ugc.aweme"}`
 
 ## Tips
 
@@ -259,6 +347,12 @@ com.android.camera2      — Camera (相机)
 - When an app isn't responding, try `press_key back` then retry.
 - Use `get_ui_tree` when you need precise element positions instead of guessing coordinates.
 - For complex flows, break them into small steps and verify each one.
+- **Prefer `list_packages` and `get_app_info`** over `device_info` for app-related queries — they return structured data directly from the device.
+- **`get_device_info`** returns battery, network, storage, memory, display info and current foreground app — use `device_info` endpoint with `type` parameter.
+- **SMS**: Use `read_sms` to check messages, `send_sms` to send. Always confirm with user before sending.
+- **App management**: `force_stop_app`, `clear_app_data`, `uninstall_app` are destructive — confirm with user first.
+- **Prefer specific API endpoints** (`list_packages`, `get_device_info`, `read_sms`, `get_app_info`) over `execute_shell` when available — they return structured JSON data. Use `execute_shell` only for operations not covered by specific endpoints.
+- **SMS**: Use `read_sms` to check messages, `send_sms` to send. Always confirm with user before sending.
 
 ## Safety
 

@@ -1,5 +1,6 @@
 package com.tutu.meowhub.core.engine
 
+import android.util.Log
 import com.tutu.meowhub.core.model.ConnectionState
 import com.tutu.meowhub.core.socket.TutuSocketClient
 import kotlinx.coroutines.CoroutineScope
@@ -8,7 +9,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.*
 
 /**
@@ -56,7 +59,6 @@ class DeviceInfoCache(private val socketClient: TutuSocketClient) {
         initialized = true
         fetchInstalledApps()
         fetchDeviceInfo()
-        fetchBatteryInfo()
     }
 
     private suspend fun fetchInstalledApps() {
@@ -73,11 +75,12 @@ class DeviceInfoCache(private val socketClient: TutuSocketClient) {
 
         val packages = resp["packages"]?.jsonArray ?: return
         val apps = packages.mapNotNull { elem ->
+            // includeVersions=true: {"package":"com.xx","versionName":"1.0","versionCode":1}
             val obj = elem.jsonObject
-            val pkg = obj["packageName"]?.jsonPrimitive?.contentOrNull
-                ?: obj["package"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val pkg = obj["package"]?.jsonPrimitive?.contentOrNull
+                ?: obj["packageName"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
             AppInfo(
-                label = obj["label"]?.jsonPrimitive?.contentOrNull ?: pkg,
+                label = pkg,
                 packageName = pkg,
                 versionName = obj["versionName"]?.jsonPrimitive?.contentOrNull ?: ""
             )
@@ -85,33 +88,45 @@ class DeviceInfoCache(private val socketClient: TutuSocketClient) {
         _installedApps.value = apps
     }
 
+    /**
+     * get_device_info 返回广播格式 {"type":"device_info","info":"<JSON字符串>"}，
+     * 没有 reqId，需要通过 messages flow 监听。
+     */
     private suspend fun fetchDeviceInfo() {
-        val reqId = socketClient.nextReqId()
         val cmd = buildJsonObject {
             put("type", "get_device_info")
-            put("reqId", reqId)
         }
-        val resp = socketClient.sendAndWait(cmd, 10000) ?: return
+        socketClient.sendFireAndForget(cmd)
+        val resp = withTimeoutOrNull(10000) {
+            socketClient.messages.first { msg ->
+                msg["type"]?.jsonPrimitive?.contentOrNull == "device_info"
+            }
+        } ?: return
 
-        _deviceInfo.value = resp
+        // info 字段是 JSON 字符串，需要二次解析
+        val infoStr = resp["info"]?.jsonPrimitive?.contentOrNull ?: return
+        val info = try {
+            Json.parseToJsonElement(infoStr).jsonObject
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse device_info.info: ${e.message}")
+            return
+        }
 
-        val w = resp["screenWidth"]?.jsonPrimitive?.intOrNull
-            ?: resp["width"]?.jsonPrimitive?.intOrNull
-        val h = resp["screenHeight"]?.jsonPrimitive?.intOrNull
-            ?: resp["height"]?.jsonPrimitive?.intOrNull
+        _deviceInfo.value = info
+
+        // 提取屏幕尺寸: info.display.width / info.display.height
+        val display = info["display"]?.jsonObject
+        val w = display?.get("width")?.jsonPrimitive?.intOrNull
+        val h = display?.get("height")?.jsonPrimitive?.intOrNull
         if (w != null && h != null && w > 0 && h > 0) {
             _screenSize.value = w to h
         }
-    }
 
-    private suspend fun fetchBatteryInfo() {
-        val reqId = socketClient.nextReqId()
-        val cmd = buildJsonObject {
-            put("type", "get_battery_stats")
-            put("reqId", reqId)
+        // 提取电池信息
+        val battery = info["battery"]?.jsonObject
+        if (battery != null) {
+            _batteryInfo.value = battery
         }
-        val resp = socketClient.sendAndWait(cmd, 10000)
-        if (resp != null) _batteryInfo.value = resp
     }
 
     /**
@@ -138,18 +153,23 @@ class DeviceInfoCache(private val socketClient: TutuSocketClient) {
         val apps = _installedApps.value
         if (apps.isNotEmpty()) {
             appendLine("已安装第三方 App (${apps.size} 个):")
-            apps.forEach { appendLine("  ${it.label} (${it.packageName})") }
+            apps.forEach { app ->
+                val display = if (app.versionName.isNotEmpty()) "${app.packageName} v${app.versionName}" else app.packageName
+                appendLine("  $display")
+            }
         }
         val di = _deviceInfo.value
         if (di != null) {
-            val model = di["model"]?.jsonPrimitive?.contentOrNull
-            val brand = di["brand"]?.jsonPrimitive?.contentOrNull
+            val model = di["deviceModel"]?.jsonPrimitive?.contentOrNull
             val androidVer = di["androidVersion"]?.jsonPrimitive?.contentOrNull
-                ?: di["android_version"]?.jsonPrimitive?.contentOrNull
-            if (model != null || brand != null) {
-                appendLine("设备: ${brand ?: ""} ${model ?: ""}")
-            }
+            if (model != null) appendLine("设备: $model")
             if (androidVer != null) appendLine("Android: $androidVer")
+            val battery = di["battery"]?.jsonObject
+            val level = battery?.get("level")?.jsonPrimitive?.intOrNull
+            val charging = battery?.get("charging")?.jsonPrimitive?.booleanOrNull
+            if (level != null) {
+                appendLine("电池: ${level}%${if (charging == true) " (充电中)" else ""}")
+            }
         }
         val (w, h) = _screenSize.value
         appendLine("屏幕: ${w}x${h}")
@@ -157,5 +177,9 @@ class DeviceInfoCache(private val socketClient: TutuSocketClient) {
 
     fun invalidate() {
         initialized = false
+    }
+
+    companion object {
+        private const val TAG = "DeviceInfoCache"
     }
 }

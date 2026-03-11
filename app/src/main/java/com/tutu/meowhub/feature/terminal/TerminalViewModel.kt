@@ -1,26 +1,24 @@
 package com.tutu.meowhub.feature.terminal
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.termux.terminal.TerminalSession
-import com.tutu.meowhub.BuildConfig
-import com.tutu.meowhub.MeowApp
-import com.tutu.meowhub.core.engine.SocketCommandBridge
-import com.tutu.meowhub.core.terminal.MeowHubBridgeServer
+import com.tutu.meowhub.core.service.TerminalForegroundService
 import com.tutu.meowhub.core.terminal.MeowTerminalSessionClient
 import com.tutu.meowhub.core.terminal.MeowTermuxInstaller
-import com.tutu.meowhub.core.terminal.MeowTermuxService
 import com.tutu.meowhub.core.terminal.OpenClawGatewayManager
 import com.tutu.meowhub.core.terminal.OpenClawInstaller
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class TerminalViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -50,65 +48,50 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     private val _terminalUpdateTrigger = MutableStateFlow(0L)
     val terminalUpdateTrigger: StateFlow<Long> = _terminalUpdateTrigger.asStateFlow()
 
-    private var sessionRestartCount = 0
-    private var lastSessionCreateTime = 0L
-    private companion object {
-        const val TAG = "TerminalViewModel"
-        const val MAX_RESTART_ATTEMPTS = 3
-        const val RESTART_COOLDOWN_MS = 2000L
-    }
-
-    val termuxService = MeowTermuxService(application)
-    val sessionClient = MeowTerminalSessionClient(application).apply {
-        onSessionUpdate = {
-            _terminalUpdateTrigger.value = System.currentTimeMillis()
-        }
-        onSessionFinishedCallback = { finishedSession ->
-            handleSessionFinished(finishedSession)
-        }
-        onOutputLineCallback = { line ->
-            handleTerminalOutputLine(line)
-        }
-    }
-
     private val _sessionList = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
     val sessionList: StateFlow<List<Pair<Int, String>>> = _sessionList.asStateFlow()
 
     private val _currentSessionIndex = MutableStateFlow(0)
     val currentSessionIndex: StateFlow<Int> = _currentSessionIndex.asStateFlow()
 
-    val openClawInstaller = OpenClawInstaller(application)
-
-    private val bridgeServer: MeowHubBridgeServer by lazy {
-        val app = getApplication<MeowApp>()
-        val bridge = SocketCommandBridge(app.tutuClient, app.deviceCache)
-        MeowHubBridgeServer(bridge, app.tutuClient)
-    }
-
     private val _consoleUrl = MutableStateFlow<String?>(null)
     val consoleUrl: StateFlow<String?> = _consoleUrl.asStateFlow()
 
-    val gatewayManager = OpenClawGatewayManager(application).apply {
-        onSessionCreated = {
-            refreshSessionList()
-            switchToGatewaySessionIfAvailable()
+    private val _isModelConfigured = MutableStateFlow(false)
+    val isModelConfigured: StateFlow<Boolean> = _isModelConfigured.asStateFlow()
+
+    private var service: TerminalForegroundService? = null
+    private var bound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            Log.i(TAG, "onServiceConnected")
+            val localBinder = binder as TerminalForegroundService.LocalBinder
+            service = localBinder.getService()
+            bound = true
+            observeServiceState()
+            onServiceReady()
         }
-        onFirstHealthy = {
-            Log.i(TAG, "Gateway first healthy")
-            printWelcomeBanner()
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.i(TAG, "onServiceDisconnected")
+            service = null
+            bound = false
         }
     }
 
-    private val _isModelConfigured = MutableStateFlow(
-        BuildConfig.DOUBAO_API_KEY.isNotBlank()
-            || (application as MeowApp).aiSettings.isConfigured
-            || (application as MeowApp).meowAppAuth.getAccessToken() != null
-    )
-    val isModelConfigured: StateFlow<Boolean> = _isModelConfigured.asStateFlow()
+    val openClawInstaller: OpenClawInstaller?
+        get() = service?.openClawInstaller
+
+    val gatewayManager: OpenClawGatewayManager?
+        get() = service?.gatewayManager
+
+    companion object {
+        private const val TAG = "TerminalViewModel"
+    }
 
     init {
         Log.i(TAG, "TerminalViewModel init")
-        termuxService.setSessionClient(sessionClient)
         checkBootstrap()
     }
 
@@ -120,8 +103,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             Log.i(TAG, "checkBootstrap: isInstalled=$installed")
             if (installed) {
                 _bootstrapState.value = BootstrapState.INSTALLED
-                createDefaultSession()
-                checkAndAutoInstallOpenClaw()
+                startAndBindService()
             } else {
                 _bootstrapState.value = BootstrapState.NOT_INSTALLED
                 Log.i(TAG, "checkBootstrap: waiting for user to install")
@@ -146,8 +128,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             if (result.isSuccess) {
                 Log.i(TAG, "installBootstrap: SUCCESS")
                 _bootstrapState.value = BootstrapState.INSTALLED
-                createDefaultSession()
-                checkAndAutoInstallOpenClaw()
+                startAndBindService()
             } else {
                 val err = result.exceptionOrNull()
                 Log.e(TAG, "installBootstrap: FAILED", err)
@@ -157,338 +138,90 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun checkAndAutoInstallOpenClaw() {
+    private fun startAndBindService() {
+        val context = getApplication<Application>()
+        Log.i(TAG, "startAndBindService")
+
+        // Start the foreground service
+        TerminalForegroundService.start(context)
+
+        // Bind to it
+        val intent = Intent(context, TerminalForegroundService::class.java)
+        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    private fun observeServiceState() {
+        val svc = service ?: return
+
         viewModelScope.launch {
-            // Wait for init.sh to finish and session to stabilize
-            Log.i(TAG, "checkAndAutoInstallOpenClaw: waiting for session to stabilize...")
-            delay(3000)
-
-            Log.i(TAG, "checkAndAutoInstallOpenClaw: checking OpenClaw status")
-            openClawInstaller.checkStatus()
-            val clawState = openClawInstaller.state.value
-            Log.i(TAG, "checkAndAutoInstallOpenClaw: state=$clawState")
-
-            when (clawState) {
-                OpenClawInstaller.State.NOT_INSTALLED -> {
-                    Log.i(TAG, "checkAndAutoInstallOpenClaw: OpenClaw not installed, starting auto-install")
-                    installOpenClaw()
-                }
-                OpenClawInstaller.State.READY -> {
-                    Log.i(TAG, "checkAndAutoInstallOpenClaw: OpenClaw ready, starting gateway")
-                    autoStartGatewayIfReady()
-                }
-                OpenClawInstaller.State.RUNNING -> {
-                    Log.i(TAG, "checkAndAutoInstallOpenClaw: Gateway already running (pre-existing)")
-                    gatewayManager.syncRunningState()
-                    openClawInstaller.copyWorkspaceFilesFromAssets()
-                    bridgeServer.start()
-                    writeOpenClawConfigFromBuildConfig()
-                    updateConsoleUrl()
-                }
-                else -> {
-                    Log.i(TAG, "checkAndAutoInstallOpenClaw: state=$clawState, no action")
-                }
-            }
+            svc.currentSession.collect { _currentSession.value = it }
         }
-    }
-
-    private fun handleTerminalOutputLine(line: String) {
-        val previousState = openClawInstaller.state.value
-        openClawInstaller.onInstallOutputLine(line)
-        val newState = openClawInstaller.state.value
-
-        if (previousState != OpenClawInstaller.State.READY && newState == OpenClawInstaller.State.READY) {
-            Log.i(TAG, "handleTerminalOutputLine: install complete, starting gateway")
-            viewModelScope.launch {
-                printToTerminal("\\033[1;33m>>> Starting OpenClaw Gateway...\\033[0m")
-                delay(2000)
-                autoStartGatewayIfReady()
-            }
-        }
-    }
-
-    fun installOpenClaw() {
         viewModelScope.launch {
-            val session = currentSession.value
-            if (session == null) {
-                Log.w(TAG, "installOpenClaw: no active session, skipping")
-                return@launch
-            }
-            Log.i(TAG, "installOpenClaw: copying bundled assets (debs, openclaw archive, mcp server, workspace)")
-            openClawInstaller.copyDebsFromAssets()
-            openClawInstaller.copyOpenClawArchiveFromAssets()
-            openClawInstaller.copyMcpServerFromAssets()
-            openClawInstaller.copyWorkspaceFilesFromAssets()
-            Log.i(TAG, "installOpenClaw: running install in session")
-            openClawInstaller.runInstallInSession(session)
-            pollForInstallCompletion()
+            svc.sessionCount.collect { _sessionCount.value = it }
         }
-    }
-
-    private fun pollForInstallCompletion() {
         viewModelScope.launch {
-            val maxWait = 180_000L
-            val interval = 5_000L
-            val start = System.currentTimeMillis()
-            Log.i(TAG, "pollForInstallCompletion: started polling (max ${maxWait/1000}s)")
-
-            while (System.currentTimeMillis() - start < maxWait) {
-                delay(interval)
-                if (openClawInstaller.state.value == OpenClawInstaller.State.READY) {
-                    Log.i(TAG, "pollForInstallCompletion: install already detected via terminal output")
-                    return@launch
-                }
-                val installed = withContext(Dispatchers.IO) { openClawInstaller.isOpenClawInstalled() }
-                if (installed) {
-                    Log.i(TAG, "pollForInstallCompletion: openclaw files detected, triggering gateway start")
-                    openClawInstaller.markReady()
-                    printToTerminal("\\033[1;33m>>> Starting OpenClaw Gateway...\\033[0m")
-                    delay(2000)
-                    autoStartGatewayIfReady()
-                    return@launch
-                }
-            }
-            Log.w(TAG, "pollForInstallCompletion: timed out after ${maxWait/1000}s")
+            svc.terminalUpdateTrigger.collect { _terminalUpdateTrigger.value = it }
         }
-    }
-
-    fun refreshOpenClawStatus() {
         viewModelScope.launch {
-            Log.i(TAG, "refreshOpenClawStatus: checking OpenClaw and gateway status")
-            withContext(Dispatchers.IO) {
-                openClawInstaller.checkStatus()
-                gatewayManager.refreshState()
-            }
-            val app = getApplication<MeowApp>()
-            _isModelConfigured.value = BuildConfig.DOUBAO_API_KEY.isNotBlank()
-                || app.aiSettings.isConfigured
-                || app.meowAppAuth.getAccessToken() != null
-                || openClawInstaller.isModelConfigured()
+            svc.sessionList.collect { _sessionList.value = it }
         }
-    }
-
-    fun startGateway() {
         viewModelScope.launch {
-            Log.i(TAG, "startGateway: manual start")
-            openClawInstaller.copyMcpServerFromAssets()
-            writeOpenClawConfigFromBuildConfig()
-            bridgeServer.start()
-            gatewayManager.startGateway(termuxService)
+            svc.currentSessionIndex.collect { _currentSessionIndex.value = it }
         }
-    }
-
-    fun stopGateway() {
-        Log.i(TAG, "stopGateway: manual stop")
-        gatewayManager.stopGateway()
-    }
-
-    private fun writeOpenClawConfigFromBuildConfig() {
-        val app = getApplication<MeowApp>()
-        val aiSettings = app.aiSettings
-
-        // Priority 1: User-configured API (highest priority)
-        if (aiSettings.isConfigured) {
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using user AI settings (model=${aiSettings.modelId})")
-            openClawInstaller.mergeOpenClawConfig(
-                apiKey = aiSettings.apiKey,
-                baseUrl = aiSettings.baseUrl,
-                modelId = aiSettings.modelId
-            )
-            _isModelConfigured.value = true
-            return
-        }
-
-        // Priority 2: Login token (TutuAI)
-        val accessToken = app.meowAppAuth.getAccessToken()
-        if (accessToken != null) {
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using TutuAI (user logged in)")
-            openClawInstaller.mergeTutuAiConfig(accessToken)
-            _isModelConfigured.value = true
-            return
-        }
-
-        // Priority 3: Build config (compile-time embedded key)
-        val apiKey = BuildConfig.DOUBAO_API_KEY
-        if (apiKey.isNotBlank()) {
-            val baseUrl = BuildConfig.DOUBAO_BASE_URL
-            val modelId = BuildConfig.DOUBAO_MODEL_ID
-            Log.i(TAG, "writeOpenClawConfigFromBuildConfig: using build config (model=$modelId)")
-            openClawInstaller.mergeOpenClawConfig(
-                apiKey = apiKey,
-                baseUrl = baseUrl,
-                modelId = modelId
-            )
-            _isModelConfigured.value = true
-            return
-        }
-
-        Log.i(TAG, "writeOpenClawConfigFromBuildConfig: no API config available, merging minimal config")
-        openClawInstaller.mergeMinimalConfig()
-        _isModelConfigured.value = openClawInstaller.isModelConfigured()
-    }
-
-    private fun autoStartGatewayIfReady() {
         viewModelScope.launch {
-            val installed = openClawInstaller.isOpenClawInstalled()
-            Log.i(TAG, "autoStartGatewayIfReady: openClawInstalled=$installed")
-            if (installed) {
-                openClawInstaller.copyMcpServerFromAssets()
-                openClawInstaller.copyWorkspaceFilesFromAssets()
-                writeOpenClawConfigFromBuildConfig()
-                bridgeServer.start()
-                Log.i(TAG, "autoStartGatewayIfReady: bridge server started, config written")
-                val healthy = withContext(Dispatchers.IO) { gatewayManager.checkHealth() }
-                Log.i(TAG, "autoStartGatewayIfReady: gatewayHealthy=$healthy")
-                if (!healthy) {
-                    Log.i(TAG, "autoStartGatewayIfReady: starting gateway")
-                    gatewayManager.startGateway(termuxService)
-                }
-            }
+            svc.consoleUrl.collect { _consoleUrl.value = it }
+        }
+        viewModelScope.launch {
+            svc.isModelConfigured.collect { _isModelConfigured.value = it }
         }
     }
 
-    private fun switchToGatewaySessionIfAvailable() {
-        val gwSession = gatewayManager.gatewaySession ?: return
-        val idx = termuxService.findSessionIndex(gwSession)
-        if (idx >= 0) {
-            Log.i(TAG, "switchToGatewaySessionIfAvailable: switching to gateway session at index $idx")
-            switchSession(idx)
-        }
-    }
-
-    fun createDefaultSession() {
-        lastSessionCreateTime = System.currentTimeMillis()
-        Log.i(TAG, "createDefaultSession")
-        val session = termuxService.createSession()
-        _currentSession.value = session
-        _sessionCount.value = termuxService.sessionCount
-        refreshSessionList()
+    private fun onServiceReady() {
+        val svc = service ?: return
+        Log.i(TAG, "onServiceReady: creating default session and checking OpenClaw")
+        svc.createDefaultSession()
+        svc.checkAndAutoInstallOpenClaw()
     }
 
     fun createNewSession() {
-        Log.i(TAG, "createNewSession")
-        val session = termuxService.createSession()
-        _currentSession.value = session
-        _sessionCount.value = termuxService.sessionCount
-        refreshSessionList()
+        service?.createNewSession()
     }
 
     fun switchSession(index: Int) {
-        Log.d(TAG, "switchSession: index=$index")
-        termuxService.switchToSession(index)
-        _currentSession.value = termuxService.currentSession
-        _currentSessionIndex.value = index
-    }
-
-    private fun refreshSessionList() {
-        _sessionList.value = termuxService.getSessionLabels(gatewayManager.gatewaySession)
-        _currentSessionIndex.value = termuxService.getCurrentSessionIndex()
+        service?.switchSession(index)
     }
 
     fun executeCommand(command: String) {
-        Log.d(TAG, "executeCommand: $command")
-        termuxService.executeCommand(command)
+        service?.executeCommand(command)
     }
 
-    private fun printToTerminal(message: String) {
-        try {
-            val session = _currentSession.value ?: return
-            session.write("printf '\\n$message\\n'\n")
-        } catch (e: Exception) {
-            Log.w(TAG, "printToTerminal: failed: ${e.message}")
-        }
+    fun startGateway() {
+        service?.startGateway()
     }
 
-    private fun updateConsoleUrl() {
-        viewModelScope.launch(Dispatchers.IO) {
-            var token = openClawInstaller.getGatewayToken()
-            if (token == null) {
-                delay(3000)
-                token = openClawInstaller.getGatewayToken()
-            }
-            val baseUrl = "http://127.0.0.1:18789/openclaw"
-            val url = if (token != null) "$baseUrl/?token=$token" else baseUrl
-            _consoleUrl.value = url
-            Log.i(TAG, "updateConsoleUrl: $url (token=${token != null})")
-        }
+    fun stopGateway() {
+        service?.stopGateway()
     }
 
-    private fun printWelcomeBanner() {
-        updateConsoleUrl()
-        val baseUrl = "http://127.0.0.1:18789/openclaw"
-
-        val gwSession = gatewayManager.gatewaySession
-        val targetSession = gwSession ?: _currentSession.value ?: return
-        try {
-            targetSession.write(buildString {
-                append("printf '\\n")
-                append("\\033[1;33m")
-                append("  ======================================\\n")
-                append("    🐱 MeowHub OpenClaw Gateway\\n")
-                append("  ======================================\\n")
-                append("\\033[0m\\n")
-                append("\\033[1;32m  ✓ Gateway 服务已启动\\033[0m\\n")
-                append("\\033[0;36m  ● 端口: 18789\\033[0m\\n")
-                append("\\033[0;36m  ● 控制台: $baseUrl\\033[0m\\n")
-                if (!_isModelConfigured.value) {
-                    append("\\033[1;33m  ⚠ AI 模型未配置，请在控制台中配置\\033[0m\\n")
-                } else {
-                    append("\\033[1;32m  ✓ AI 模型已配置\\033[0m\\n")
-                }
-                append("\\n")
-                append("\\033[0;90m  提示: 在终端页面顶部切换「控制台」标签可直接访问\\033[0m\\n")
-                append("'\n")
-            })
-        } catch (e: Exception) {
-            Log.w(TAG, "printWelcomeBanner: failed: ${e.message}")
-        }
+    fun installOpenClaw() {
+        service?.installOpenClaw()
     }
 
-    private fun handleSessionFinished(finishedSession: TerminalSession) {
-        viewModelScope.launch {
-            Log.i(TAG, "handleSessionFinished: session finished")
-            termuxService.removeSession(finishedSession)
-            _sessionCount.value = termuxService.sessionCount
-            refreshSessionList()
-
-            if (termuxService.sessionCount > 0) {
-                _currentSession.value = termuxService.currentSession
-                Log.i(TAG, "handleSessionFinished: switched to existing session")
-                return@launch
-            }
-
-            val now = System.currentTimeMillis()
-            if (now - lastSessionCreateTime < RESTART_COOLDOWN_MS) {
-                sessionRestartCount++
-            } else {
-                sessionRestartCount = 0
-            }
-
-            Log.i(TAG, "handleSessionFinished: restartCount=$sessionRestartCount, " +
-                "timeSinceLastCreate=${now - lastSessionCreateTime}ms")
-
-            if (sessionRestartCount >= MAX_RESTART_ATTEMPTS) {
-                Log.e(TAG, "Session keeps crashing ($sessionRestartCount times). " +
-                    "Falling back to /system/bin/sh.")
-                _errorMessage.value = "Shell keeps crashing. Using fallback shell.\n" +
-                    "Bootstrap binaries may be incompatible."
-                val fallbackSession = termuxService.createSession(
-                    executable = "/system/bin/sh"
-                )
-                _currentSession.value = fallbackSession
-                _sessionCount.value = termuxService.sessionCount
-                sessionRestartCount = 0
-            } else {
-                createDefaultSession()
-            }
-        }
+    fun refreshOpenClawStatus() {
+        service?.refreshOpenClawStatus()
     }
 
     override fun onCleared() {
-        Log.i(TAG, "onCleared: cleaning up")
+        Log.i(TAG, "onCleared")
         super.onCleared()
-        bridgeServer.stop()
-        gatewayManager.cleanup()
-        termuxService.cleanup()
+        if (bound) {
+            try {
+                getApplication<Application>().unbindService(serviceConnection)
+            } catch (e: Exception) {
+                Log.w(TAG, "unbindService failed: ${e.message}")
+            }
+            bound = false
+        }
+        // Note: We don't stop the service here - it will be stopped when the app exits
     }
 }

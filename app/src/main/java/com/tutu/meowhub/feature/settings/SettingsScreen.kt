@@ -555,10 +555,16 @@ private fun AdvancedSettingsEntryCard(onNavigate: () -> Unit) {
 private fun OpenClawSettingsCard() {
     val context = LocalContext.current
     val terminalVm: TerminalViewModel = viewModel()
-    val openClawState by terminalVm.openClawInstaller.state.collectAsState()
-    val openClawMessage by terminalVm.openClawInstaller.statusMessage.collectAsState()
-    val gatewayState by terminalVm.gatewayManager.state.collectAsState()
-    val gatewayMessage by terminalVm.gatewayManager.statusMessage.collectAsState()
+
+    // Use safe calls with default states when service is not yet connected
+    val openClawState by terminalVm.openClawInstaller?.state?.collectAsState()
+        ?: remember { mutableStateOf(OpenClawInstaller.State.NOT_CHECKED) }
+    val openClawMessage by terminalVm.openClawInstaller?.statusMessage?.collectAsState()
+        ?: remember { mutableStateOf("") }
+    val gatewayState by terminalVm.gatewayManager?.state?.collectAsState()
+        ?: remember { mutableStateOf(OpenClawGatewayManager.GatewayState.STOPPED) }
+    val gatewayMessage by terminalVm.gatewayManager?.statusMessage?.collectAsState()
+        ?: remember { mutableStateOf("") }
     val isModelConfigured by terminalVm.isModelConfigured.collectAsState()
 
     LaunchedEffect(Unit) {

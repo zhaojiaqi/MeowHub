@@ -139,6 +139,12 @@
     <string name="notification_content">Meow overlay is running</string>
     <string name="notification_stop">Stop</string>
 
+    <!-- Terminal Notification -->
+    <string name="terminal_notification_channel_name">Terminal Service</string>
+    <string name="terminal_notification_channel_desc">MeowHub terminal is running in the background</string>
+    <string name="terminal_notification_content">Terminal is running</string>
+    <string name="terminal_notification_stop">Stop</string>
+
     <!-- Command categories -->
     <string name="cat_input_control">1. Input Control</string>
     <string name="cat_system_commands">2. System Commands</string>

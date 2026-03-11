@@ -1,7 +1,9 @@
 package com.tutu.meowhub
 
+import android.app.Activity
 import android.app.Application
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import com.tutu.meowhub.BuildConfig
 import com.tutu.meowhub.core.auth.MeowAppAuthManager
@@ -9,6 +11,7 @@ import com.tutu.meowhub.core.auth.TutuAuthManager
 import com.tutu.meowhub.core.database.LocalSkillRepository
 import com.tutu.meowhub.core.database.MeowHubDatabase
 import com.tutu.meowhub.core.engine.*
+import com.tutu.meowhub.core.service.TerminalForegroundService
 import com.tutu.meowhub.core.settings.AiSettingsManager
 import com.tutu.meowhub.core.settings.AppToolManager
 import com.tutu.meowhub.core.network.MeowHubApiClient
@@ -90,6 +93,27 @@ class MeowApp : Application() {
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private var activityCount = 0
+    private val activityLifecycleCallbacks = object : ActivityLifecycleCallbacks {
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+        override fun onActivityStarted(activity: Activity) {
+            activityCount++
+            Log.d(TAG, "Activity started, count=$activityCount")
+        }
+        override fun onActivityResumed(activity: Activity) {}
+        override fun onActivityPaused(activity: Activity) {}
+        override fun onActivityStopped(activity: Activity) {
+            activityCount--
+            Log.d(TAG, "Activity stopped, count=$activityCount")
+            if (activityCount == 0) {
+                Log.i(TAG, "All activities stopped, stopping terminal service")
+                TerminalForegroundService.stop(this@MeowApp)
+            }
+        }
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+        override fun onActivityDestroyed(activity: Activity) {}
+    }
+
     override fun onCreate() {
         super.onCreate()
         if (Build.VERSION.SDK_INT >= 28) {
@@ -99,6 +123,7 @@ class MeowApp : Application() {
         deviceCache
         appToolManager.init()
         connectWithAuth()
+        registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
     }
 
     fun connectWithAuth(force: Boolean = false) {

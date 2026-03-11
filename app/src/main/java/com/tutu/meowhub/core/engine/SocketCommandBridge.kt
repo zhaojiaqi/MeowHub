@@ -344,56 +344,171 @@ class SocketCommandBridge(
                 if (apps.isNotEmpty()) {
                     "已安装第三方 App 共 ${apps.size} 个:\n" +
                         apps.joinToString("\n") {
-                            if (it.label != it.packageName) "${it.label} (${it.packageName})"
+                            if (it.versionName.isNotEmpty()) "${it.packageName} v${it.versionName}"
                             else it.packageName
                         }
                 } else {
-                    val resp = executeShell("pm list packages -3")
-                    val pkgs = resp.lines().filter { it.startsWith("package:") }
-                        .map { it.removePrefix("package:").trim() }
+                    // 直接调用 socket list_packages
+                    val reqId = socketClient.nextReqId()
+                    val cmd = buildJsonObject {
+                        put("type", "list_packages")
+                        put("reqId", reqId)
+                        put("thirdPartyOnly", true)
+                    }
+                    val resp = socketClient.sendAndWait(cmd, 15000)
+                    val pkgs = resp?.get("packages")?.jsonArray
+                        ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                        ?: emptyList()
                     "已安装第三方 App 共 ${pkgs.size} 个:\n${pkgs.joinToString("\n")}"
                 }
             }
             "battery" -> {
-                val cached = deviceCache.batteryInfo.value
-                if (cached != null) cached.toString()
-                else executeShell("dumpsys battery")
+                val di = deviceCache.deviceInfo.value
+                val battery = di?.get("battery")?.jsonObject
+                if (battery != null) {
+                    val level = battery["level"]?.jsonPrimitive?.intOrNull
+                    val charging = battery["charging"]?.jsonPrimitive?.booleanOrNull
+                    val status = battery["status"]?.jsonPrimitive?.contentOrNull
+                    val plug = battery["plugType"]?.jsonPrimitive?.contentOrNull
+                    "电量: ${level ?: "?"}%, 状态: ${status ?: "?"}, 充电: ${charging ?: "?"}, 插头: ${plug ?: "?"}"
+                } else "电池信息暂不可用"
             }
-            "storage" -> executeShell("df -h /data")
+            "storage" -> {
+                val di = deviceCache.deviceInfo.value
+                val storage = di?.get("storage")?.jsonObject
+                if (storage != null) {
+                    val total = storage["totalMB"]?.jsonPrimitive?.longOrNull
+                    val avail = storage["availableMB"]?.jsonPrimitive?.longOrNull
+                    "存储: 总计 ${total ?: "?"}MB, 可用 ${avail ?: "?"}MB"
+                } else "存储信息暂不可用"
+            }
             "wifi", "network" -> {
                 val di = deviceCache.deviceInfo.value
+                val network = di?.get("network")?.jsonObject
                 val parts = mutableListOf<String>()
-                val wifiRaw = try { executeShell("dumpsys wifi | grep mWifiInfo") } catch (_: Exception) { "" }
-                if (wifiRaw.isNotBlank()) parts.add("Wi-Fi: $wifiRaw")
-                if (di != null) {
-                    di["wlanIp"]?.jsonPrimitive?.contentOrNull?.let { parts.add("IP: $it") }
+                val wifi = network?.get("wifi")?.jsonObject
+                if (wifi != null) {
+                    val connected = wifi["connected"]?.jsonPrimitive?.booleanOrNull
+                    val ssid = wifi["ssid"]?.jsonPrimitive?.contentOrNull
+                    val rssi = wifi["rssi"]?.jsonPrimitive?.intOrNull
+                    parts.add("Wi-Fi: ${if (connected == true) "已连接 $ssid (${rssi}dBm)" else "未连接"}")
                 }
-                parts.joinToString("\n")
-            }
-            "bluetooth" -> {
-                try {
-                    executeShell("dumpsys bluetooth_manager | grep -E 'name:|address:|state:' | head -30")
-                } catch (_: Exception) { "蓝牙信息获取失败" }
+                val mobile = network?.get("mobile")?.jsonObject
+                if (mobile != null) {
+                    val connected = mobile["connected"]?.jsonPrimitive?.booleanOrNull
+                    val type = mobile["type"]?.jsonPrimitive?.contentOrNull
+                    parts.add("移动网络: ${if (connected == true) "已连接 ($type)" else "未连接"}")
+                }
+                parts.joinToString("\n").ifEmpty { "网络信息暂不可用" }
             }
             "all" -> {
-                val battery = try { executeShell("dumpsys battery") } catch (_: Exception) { "" }
-                val storage = try { executeShell("df -h /data") } catch (_: Exception) { "" }
-                "=== 电池 ===\n$battery\n\n=== 存储 ===\n$storage"
+                val di = deviceCache.deviceInfo.value
+                if (di != null) di.toString()
+                else "设备信息暂不可用，请先连接"
             }
             else -> "不支持的查询类型: $queryType"
         }
     }
 
-    suspend fun executeShell(command: String): String {
+    suspend fun sendSms(destination: String, text: String): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "send_sms")
+            put("reqId", reqId)
+            put("destination", destination)
+            put("text", text)
+        }
+        return socketClient.sendAndWait(cmd, 15000)
+    }
+
+    suspend fun readSms(limit: Int = 20, unreadOnly: Boolean = false): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "read_sms")
+            put("reqId", reqId)
+            put("limit", limit)
+            put("unreadOnly", unreadOnly)
+        }
+        return socketClient.sendAndWait(cmd, 15000)
+    }
+
+    suspend fun getAppInfo(packageName: String): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "get_app_info")
+            put("reqId", reqId)
+            put("package", packageName)
+        }
+        return socketClient.sendAndWait(cmd, 10000)
+    }
+
+    suspend fun forceStopApp(packageName: String): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "force_stop_app")
+            put("reqId", reqId)
+            put("package", packageName)
+        }
+        return socketClient.sendAndWait(cmd, 10000)
+    }
+
+    suspend fun uninstallApp(packageName: String, keepData: Boolean = false): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "uninstall_app")
+            put("reqId", reqId)
+            put("package", packageName)
+            put("keepData", keepData)
+        }
+        return socketClient.sendAndWait(cmd, 30000)
+    }
+
+    suspend fun installApk(path: String): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "install_apk")
+            put("reqId", reqId)
+            put("path", path)
+        }
+        return socketClient.sendAndWait(cmd, 60000)
+    }
+
+    suspend fun clearAppData(packageName: String): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "clear_app_data")
+            put("reqId", reqId)
+            put("package", packageName)
+        }
+        return socketClient.sendAndWait(cmd, 15000)
+    }
+
+    suspend fun listPackages(thirdPartyOnly: Boolean = true, includeVersions: Boolean = false): JsonObject? {
+        val reqId = socketClient.nextReqId()
+        val cmd = buildJsonObject {
+            put("type", "list_packages")
+            put("reqId", reqId)
+            put("thirdPartyOnly", thirdPartyOnly)
+            put("includeVersions", includeVersions)
+        }
+        return socketClient.sendAndWait(cmd, 15000)
+    }
+
+    /**
+     * 执行 shell 命令。
+     * 响应格式: {"type":"shell_result","reqId":"...","exitCode":0,"stdout":"...","stderr":""}
+     * 注意: 响应类型是 shell_result（非 execute_shell_result），无 success 字段，用 exitCode 判断。
+     */
+    suspend fun executeShell(command: String, timeout: Int = 30): String {
         val reqId = socketClient.nextReqId()
         val cmd = buildJsonObject {
             put("type", "execute_shell")
             put("reqId", reqId)
             put("command", command)
-            put("timeout", 30)
+            put("timeout", timeout)
         }
-        val resp = socketClient.sendAndWait(cmd, 35000) ?: return ""
-        return resp["output"]?.jsonPrimitive?.contentOrNull
-            ?: resp["result"]?.jsonPrimitive?.contentOrNull ?: ""
+        val resp = socketClient.sendAndWait(cmd, (timeout + 5) * 1000L) ?: return ""
+        return resp["stdout"]?.jsonPrimitive?.contentOrNull
+            ?: resp["output"]?.jsonPrimitive?.contentOrNull ?: ""
     }
 }
