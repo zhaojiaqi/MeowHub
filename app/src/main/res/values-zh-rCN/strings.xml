@@ -254,6 +254,11 @@
     <string name="base_url_label">接口地址</string>
     <string name="show">显示</string>
     <string name="hide">隐藏</string>
+    <string name="app_tools_title">应用工具</string>
+    <string name="app_tools_desc">配置 AI 操作的默认应用</string>
+    <string name="app_tools_default">默认: %1$s</string>
+    <string name="app_tools_count">%1$d 个应用</string>
+    <string name="app_tools_empty">未找到可分类的应用</string>
     <string name="test_api">测试连接</string>
     <string name="test_api_success">成功: %1$s</string>
     <string name="test_api_fail">失败: %1$s</string>

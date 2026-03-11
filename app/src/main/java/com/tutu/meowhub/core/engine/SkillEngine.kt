@@ -26,7 +26,8 @@ class SkillEngine(
     private val bridge: SocketCommandBridge,
     private val apiClient: MeowHubApiClient,
     private val aiProviderFactory: (() -> AiProvider?)? = null,
-    @Volatile private var promptHandler: PromptHandler? = null
+    @Volatile private var promptHandler: PromptHandler? = null,
+    private val toolsContextProvider: (() -> String)? = null
 ) {
     private val aiProvider: AiProvider? get() = aiProviderFactory?.invoke()
     fun setPromptHandler(handler: PromptHandler?) {
@@ -799,6 +800,9 @@ class SkillEngine(
 
             var prompt = interpolateVars(step.prompt, context) + buildEventsContext()
             prompt += AI_ACT_FORMAT_INSTRUCTION
+            toolsContextProvider?.invoke()?.let { toolsCtx ->
+                if (toolsCtx.isNotBlank()) prompt += toolsCtx
+            }
             if (actHistory.isNotEmpty()) {
                 val recent = actHistory.takeLast(10)
                 val offset = actHistory.size - recent.size
@@ -929,7 +933,7 @@ class SkillEngine(
 
         val direction = Regex("direction='(\\w+)'").find(paramsStr)?.groupValues?.get(1) ?: ""
         val content = Regex("content='([^']*)'").find(paramsStr)?.groupValues?.get(1) ?: ""
-        val appName = Regex("app_name='([^']*)'").find(paramsStr)?.groupValues?.get(1) ?: ""
+        val appName = Regex("(?:app_name|package)='([^']*)'").find(paramsStr)?.groupValues?.get(1) ?: ""
         val question = Regex("question='([^']*)'").find(paramsStr)?.groupValues?.get(1) ?: ""
         val seconds = Regex("seconds=(\\d+)").find(paramsStr)?.groupValues?.get(1)?.toIntOrNull() ?: 1
         val queryType = Regex("type='([^']*)'").find(paramsStr)?.groupValues?.get(1) ?: "apps"
@@ -1264,6 +1268,7 @@ Thought: <你的分析思考>
 Action: <action_name>(<params>)
 
 可用 Action：
+- open_app(package='包名') — 打开应用（优先使用此方式打开应用）
 - click(point='<point>X Y</point>') — 点击坐标（0-1000 归一化坐标）
 - long_press(point='<point>X Y</point>') — 长按
 - type(content='要输入的文字') — 输入文本

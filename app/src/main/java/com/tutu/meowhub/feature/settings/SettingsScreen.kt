@@ -49,6 +49,7 @@ fun SettingsScreen(
     adbViewModel: AdbViewModel = viewModel(),
     onNavigateDebug: () -> Unit,
     onNavigateAdvancedSettings: () -> Unit = {},
+    onNavigateAppTools: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit,
     onNavigateLogin: () -> Unit = {},
     onNavigateAccount: () -> Unit = {}
@@ -146,6 +147,8 @@ fun SettingsScreen(
                 onStartOverlay = { MeowOverlayService.start(context) },
                 onStopOverlay = { MeowOverlayService.stop(context) }
             )
+
+            AppToolsEntryCard(onNavigate = onNavigateAppTools)
 
             AdvancedSettingsEntryCard(onNavigate = onNavigateAdvancedSettings)
 
@@ -472,6 +475,42 @@ private fun OverlayControlCard(
                     Text(stringResource(R.string.btn_stop_overlay))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppToolsEntryCard(onNavigate: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        onClick = onNavigate
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Widgets,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.app_tools_title), fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.app_tools_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
