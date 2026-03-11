@@ -51,6 +51,7 @@ enum class MainTab(
 fun MainScreen(
     onNavigateDebug: () -> Unit,
     onNavigateAdvancedSettings: () -> Unit = {},
+    onNavigateAppTools: () -> Unit = {},
     onNavigateLogin: () -> Unit = {},
     onNavigateAccount: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit
@@ -172,6 +173,7 @@ fun MainScreen(
                     adbViewModel = adbViewModel,
                     onNavigateDebug = onNavigateDebug,
                     onNavigateAdvancedSettings = onNavigateAdvancedSettings,
+                    onNavigateAppTools = onNavigateAppTools,
                     onRequestOverlayPermission = onRequestOverlayPermission,
                     onNavigateLogin = onNavigateLogin,
                     onNavigateAccount = onNavigateAccount

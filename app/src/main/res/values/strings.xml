@@ -422,6 +422,11 @@
     <string name="base_url_label">Base URL</string>
     <string name="show">Show</string>
     <string name="hide">Hide</string>
+    <string name="app_tools_title">App Tools</string>
+    <string name="app_tools_desc">Configure default apps for AI actions</string>
+    <string name="app_tools_default">Default: %1$s</string>
+    <string name="app_tools_count">%1$d apps</string>
+    <string name="app_tools_empty">No categorized apps found</string>
     <string name="test_api">Test Connection</string>
     <string name="test_api_success">Success: %1$s</string>
     <string name="test_api_fail">Failed: %1$s</string>
