@@ -110,6 +110,24 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 - **悬浮窗控制** — 浮动面板提供快捷操作和实时技能执行状态
 - **开放生态** — 用 JSON 创建自己的技能，贡献到社区，打造你的专属手机 AI 分身
 
+### v1.1.0 新特性
+
+**设备控制 — 大幅扩展**
+- TutuGui Server（scrcpy-server）升级至 v0312 版本：支持命令数从 27 个扩展至 **36 个**
+- 新增 11 个 Socket 命令：`list_packages`、`get_app_info`、`force_stop_app`、`uninstall_app`、`install_apk`、`clear_app_data`、`send_sms`、`read_sms`、`get_device_info`、`execute_shell`、`call_state_event`
+- 新增 7 个 HTTP Bridge 端点，OpenClaw AI 可直接通过结构化 API 管理应用、收发短信，无需依赖 Shell 命令
+
+**AI 与对话增强**
+- 高级设置新增模型检测功能，支持验证 API 配置是否有效
+- 登录用户自动使用 TutuAI 代理服务，无需手动配置 API
+- AI 消息支持 **Markdown 渲染**，表格支持全屏缩放、长按复制
+- 优化 AI 提示词：常用应用直接映射包名（微信 -> `com.tencent.mm`），减少无效查询
+
+**导航与体验优化**
+- 使用 Jetpack Navigation Compose 全面重构导航 — 页面切换更流畅，返回逻辑更正确
+- ADB 配对前增加设置须知弹窗
+- 通知权限改为跳转系统设置页面
+
 ### 工作原理
 
 ```

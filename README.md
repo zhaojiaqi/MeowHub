@@ -110,6 +110,24 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 - **Overlay Control** — Floating panel for quick actions and real-time skill execution status
 - **Open Ecosystem** — Create your own skills in JSON, contribute to the community, and build your personal phone AI avatar
 
+### What's New in v1.1.0
+
+**Device Control — Massively Expanded**
+- TutuGui Server (scrcpy-server) upgraded to v0312: command count expanded from 27 to **36**
+- 11 new Socket commands: `list_packages`, `get_app_info`, `force_stop_app`, `uninstall_app`, `install_apk`, `clear_app_data`, `send_sms`, `read_sms`, `get_device_info`, `execute_shell`, `call_state_event`
+- 7 new HTTP Bridge endpoints for AI-driven app management and SMS — OpenClaw can now manage apps and send/read SMS via structured APIs
+
+**AI & Chat Enhancements**
+- Advanced Settings with model detection — verify your API configuration works before chatting
+- Logged-in users auto-connect to TutuAI proxy — zero manual API setup needed
+- AI messages now render **Markdown** with table zoom and long-press copy
+- Smarter prompts: common apps map directly to package names (e.g., WeChat -> `com.tencent.mm`), reducing unnecessary queries
+
+**Navigation & UX**
+- Full navigation rewrite using Jetpack Navigation Compose — smoother transitions, correct back behavior
+- ADB pairing now shows a setup notice dialog first
+- Notification permission redirects to system settings page
+
 ### How It Works
 
 ```
