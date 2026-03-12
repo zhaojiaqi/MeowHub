@@ -28,6 +28,8 @@ import com.tutu.meowhub.feature.debug.DebugScreen
 import com.tutu.meowhub.feature.navigation.MainScreen
 import com.tutu.meowhub.feature.settings.AdvancedSettingsScreen
 import com.tutu.meowhub.feature.settings.AppToolsScreen
+import com.tutu.meowhub.feature.settings.AboutScreen
+import com.tutu.meowhub.feature.settings.ServicesScreen
 import com.tutu.meowhub.ui.theme.MeowHubTheme
 import kotlinx.serialization.Serializable
 
@@ -78,6 +80,8 @@ class MainActivity : ComponentActivity() {
 @Serializable object RouteAccount
 @Serializable object RouteAdvancedSettings
 @Serializable object RouteAppTools
+@Serializable object RouteServices
+@Serializable object RouteAbout
 
 @Composable
 fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
@@ -155,9 +159,10 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
     ) {
         composable<RouteMain> {
             MainScreen(
-                onNavigateDebug = { navController.navigate(RouteDebug) },
                 onNavigateAdvancedSettings = { navController.navigate(RouteAdvancedSettings) },
                 onNavigateAppTools = { navController.navigate(RouteAppTools) },
+                onNavigateServices = { navController.navigate(RouteServices) },
+                onNavigateAbout = { navController.navigate(RouteAbout) },
                 onNavigateLogin = { navController.navigate(RouteLogin) },
                 onNavigateAccount = { navController.navigate(RouteAccount) },
                 onRequestOverlayPermission = onRequestOverlayPermission
@@ -177,6 +182,16 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
         }
         composable<RouteAppTools> {
             AppToolsScreen(onBack = { navController.popBackStack() })
+        }
+        composable<RouteServices> {
+            ServicesScreen(
+                onRequestOverlayPermission = onRequestOverlayPermission,
+                onNavigateDebug = { navController.navigate(RouteDebug) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<RouteAbout> {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
     }
 }

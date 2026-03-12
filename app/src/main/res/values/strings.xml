@@ -108,6 +108,11 @@
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_about">About</string>
+    <string name="settings_section_services">Services &amp; Connection</string>
+    <string name="settings_section_config">Configuration</string>
+    <string name="settings_section_about">About</string>
+    <string name="services_desc">ADB, overlay, and OpenClaw AI Agent</string>
+    <string name="about_title">About</string>
 
     <!-- Open Source Notice -->
     <string name="opensource_title">This app is completely free and open source</string>

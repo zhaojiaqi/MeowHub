@@ -108,6 +108,11 @@
     <!-- Settings -->
     <string name="settings_title">设置</string>
     <string name="settings_about">关于</string>
+    <string name="settings_section_services">服务与连接</string>
+    <string name="settings_section_config">配置</string>
+    <string name="settings_section_about">关于</string>
+    <string name="services_desc">ADB 调试、悬浮窗、OpenClaw AI Agent</string>
+    <string name="about_title">关于</string>
 
     <!-- Open Source Notice -->
     <string name="opensource_title">本软件完全免费开源</string>
