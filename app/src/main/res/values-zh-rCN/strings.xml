@@ -2,7 +2,7 @@
     <string name="app_name">喵控</string>
     <string name="app_logo_text">喵</string>
     <string name="app_subtitle">TUTU 智能控制 · AI 手机控制中心</string>
-    <string name="app_footer">喵控 v1.0 · by ziv &amp; TuTu</string>
+    <string name="app_footer">喵控 v1.2 · by ziv &amp; TuTu</string>
 
     <!-- Connection -->
     <string name="tutu_service">TUTU 服务</string>

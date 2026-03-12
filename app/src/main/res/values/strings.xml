@@ -2,7 +2,7 @@
     <string name="app_name">MeowHub</string>
     <string name="app_logo_text">Meow</string>
     <string name="app_subtitle">TUTU Smart Control · AI Phone Control Center</string>
-    <string name="app_footer">MeowHub v1.0 · by ziv &amp; TuTu</string>
+    <string name="app_footer">MeowHub v1.2 · by ziv &amp; TuTu</string>
 
     <!-- Connection -->
     <string name="tutu_service">TUTU Service</string>
