@@ -142,13 +142,33 @@ class OpenClawInstaller(private val context: Context) {
             appendLine("echo '>>> [1/6] Fixing broken deps...'")
             appendLine("dpkg --remove --force-depends dpkg-scanpackages dpkg-perl 2>&1 || true")
             appendLine()
-            appendLine("echo '>>> [2/6] Installing Node.js from bundled packages...'")
+            appendLine("echo '>>> [2/6] Installing Node.js & tools from bundled packages...'")
             appendLine("DEBS_DIR=\$HOME/.meowhub/debs")
             appendLine("dpkg -i \$DEBS_DIR/c-ares_*.deb 2>&1 || true")
             appendLine("dpkg -i \$DEBS_DIR/libsqlite_*.deb 2>&1 || true")
             appendLine("dpkg -i \$DEBS_DIR/nodejs-lts_*.deb 2>&1 || { echo '[error] Failed to install nodejs'; exit 1; }")
             appendLine("dpkg -i \$DEBS_DIR/npm_*.deb 2>&1 || echo '[warn] npm deb install had warnings'")
             appendLine("echo \"  node version: \$(node --version 2>&1)\"")
+            appendLine("echo '  Installing git...'")
+            appendLine("dpkg -i \$DEBS_DIR/git_*.deb 2>&1 || echo '[warn] git deb install had warnings'")
+            appendLine("echo \"  git version: \$(git --version 2>&1)\"")
+            appendLine()
+            appendLine("echo '  Installing build tools (cmake, clang)...'")
+            // cmake deps: libarchive, jsoncpp, libuv, rhash (libcurl, libexpat, zlib, libc++ already in bootstrap)
+            appendLine("dpkg -i \$DEBS_DIR/libarchive_*.deb 2>&1 || true")
+            appendLine("dpkg -i \$DEBS_DIR/jsoncpp_*.deb 2>&1 || true")
+            appendLine("dpkg -i \$DEBS_DIR/libuv_*.deb 2>&1 || true")
+            appendLine("dpkg -i \$DEBS_DIR/rhash_*.deb 2>&1 || true")
+            appendLine("dpkg -i \$DEBS_DIR/cmake_*.deb 2>&1 || echo '[warn] cmake deb install had warnings'")
+            appendLine("echo \"  cmake version: \$(cmake --version 2>&1 | head -1)\"")
+            // clang toolchain: libllvm -> ndk-sysroot, libcompiler-rt, lld, llvm -> clang
+            appendLine("dpkg -i \$DEBS_DIR/libllvm_*.deb 2>&1 || echo '[warn] libllvm install had warnings'")
+            appendLine("dpkg -i \$DEBS_DIR/ndk-sysroot_*.deb 2>&1 || echo '[warn] ndk-sysroot install had warnings'")
+            appendLine("dpkg -i \$DEBS_DIR/libcompiler-rt_*.deb 2>&1 || echo '[warn] libcompiler-rt install had warnings'")
+            appendLine("dpkg -i \$DEBS_DIR/lld_*.deb 2>&1 || echo '[warn] lld install had warnings'")
+            appendLine("dpkg -i \$DEBS_DIR/llvm_*.deb 2>&1 || echo '[warn] llvm install had warnings'")
+            appendLine("dpkg -i \$DEBS_DIR/clang_*.deb 2>&1 || echo '[warn] clang install had warnings'")
+            appendLine("echo \"  clang version: \$(clang --version 2>&1 | head -1)\"")
             appendLine()
             appendLine("echo '>>> [3/6] Setting up Bionic compatibility...'")
             appendLine("cat > \$HOME/bionic-compat.js << 'COMPATEOF'")
@@ -158,7 +178,9 @@ class OpenClawInstaller(private val context: Context) {
             appendLine("  try { const r = origNet.call(os); if (r && Object.keys(r).length > 0) return r; } catch(e) {}")
             appendLine("  return { lo: [{ address: '127.0.0.1', netmask: '255.0.0.0', family: 'IPv4', mac: '00:00:00:00:00:00', internal: true, cidr: '127.0.0.1/8' }] };")
             appendLine("};")
-            appendLine("Object.defineProperty(process, 'platform', { value: 'linux' });")
+            // Note: Do NOT override process.platform to 'linux' here.
+            // Termux Node.js reports 'android' which is correct and needed by
+            // NAPI-RS native bindings (e.g. @snazzah/davey) to load the right .node file.
             appendLine("const origCpus = os.cpus;")
             appendLine("os.cpus = function() {")
             appendLine("  try { const c = origCpus.call(os); if (c && c.length > 0) return c; } catch(e) {}")
@@ -294,8 +316,8 @@ class OpenClawInstaller(private val context: Context) {
             }
             line.contains("[2/6]") -> {
                 _state.value = State.INSTALLING_NODE
-                _statusMessage.value = "Installing Node.js..."
-                Log.i(TAG, "Install step 2/6: installing Node.js")
+                _statusMessage.value = "Installing Node.js & tools..."
+                Log.i(TAG, "Install step 2/6: installing Node.js & tools")
             }
             line.contains("[3/6]") -> {
                 _state.value = State.INSTALLING_OPENCLAW

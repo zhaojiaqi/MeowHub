@@ -161,6 +161,7 @@ class MeowTermuxService(private val context: Context) {
             "PATH" to "$prefix/bin:$prefix/bin/applets:/system/bin",
             "LANG" to "en_US.UTF-8",
             "LD_LIBRARY_PATH" to "$prefix/lib",
+            "LD_PRELOAD" to "$prefix/lib/libtermux-exec.so",
             "COLORTERM" to "truecolor",
             "SHELL" to "$prefix/bin/sh",
             "ANDROID_DATA" to "/data",
