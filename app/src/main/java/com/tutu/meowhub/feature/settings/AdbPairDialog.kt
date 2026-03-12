@@ -75,6 +75,19 @@ fun AdbPairDialog(
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Text(
+                        stringResource(R.string.adb_pair_classic_notification_tip),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
             }
         },
         confirmButton = {

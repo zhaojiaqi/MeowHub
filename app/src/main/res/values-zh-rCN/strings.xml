@@ -190,6 +190,7 @@
     <string name="adb_pair_step3">3. 在通知栏中输入显示的配对码</string>
     <string name="adb_pair_note">开启无线调试时请保持本应用在前台。配对码将通过通知栏输入。</string>
     <string name="adb_pair_notification_tip">提示：如果点击「使用配对码配对设备」后通知没有自动弹出，请手动下拉通知栏找到配对码输入通知。</string>
+    <string name="adb_pair_classic_notification_tip">重要：部分手机默认使用精简通知样式，会隐藏配对码输入框。如果通知中看不到输入框，请前往 设置 → 通知 → 通知样式，切换为「经典」或「原生 Android」样式后重试。</string>
     <string name="adb_pair_start">开始配对</string>
 
     <!-- ADB Pairing Service Notifications -->

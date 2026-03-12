@@ -378,6 +378,7 @@
     <string name="adb_pair_step3">3. A notification will appear to enter the pairing code</string>
     <string name="adb_pair_note">Keep this app in the foreground while enabling Wireless Debugging. The pairing code will be entered via the notification bar.</string>
     <string name="adb_pair_notification_tip">Tip: If the notification doesn\'t pop up after tapping \"Pair device with pairing code\", please swipe down the notification shade to find the pairing code input notification.</string>
+    <string name="adb_pair_classic_notification_tip">Important: Some phones use a simplified notification style by default, which hides the pairing code input box. If you cannot see the input field in the notification, go to Settings → Notifications → Notification style and switch to \"Classic\" or \"Native Android\" style, then retry.</string>
     <string name="adb_pair_start">Start Pairing</string>
 
     <!-- ADB Pairing Service Notifications -->
