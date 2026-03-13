@@ -7,15 +7,32 @@ summary: "MeowHub device control tools and local setup notes"
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
-## MeowHub HTTP Bridge
+## MeowHub Node Host
 
-MeowHub 通过 HTTP Bridge Server 提供 29 个手机控制工具。Bridge 运行在 `http://127.0.0.1:18790`，桥接 App 内部的 SocketCommandBridge，底层通过 TutuGui Server 与设备交互。
+MeowHub 通过 OpenClaw Node Host 提供 28 个手机控制工具。Node Host 通过 WebSocket 连接到 OpenClaw Gateway，将设备命令注册为原生 node 工具。
+
+### 调用方式
+
+使用 `nodes` 工具，`action: "invoke"`，`node: "MeowHub"`：
+
+```
+Tool: nodes
+Parameters:
+  action: "invoke"
+  node: "MeowHub"
+  invokeCommand: "device.screenshot"
+  invokeParamsJson: "{\"quality\":50}"
+```
+
+**每次调用都必须设置 `node: "MeowHub"`。**
 
 ### 架构
 
 ```
 OpenClaw AI (你)
-    ↓ HTTP (curl)
+    ↓ node.invoke (原生 WebSocket)
+MeowHub Node Host (meowhub-node-host.js)
+    ↓ HTTP
 MeowHub Bridge Server (:18790)
     ↓ SocketCommandBridge
 TutuSocketClient
@@ -25,56 +42,44 @@ TutuGui Server
 截图 / 点击 / 滑动 / UI树 / 应用管理 / 短信 / 通话 / 设备信息
 ```
 
-### 调用方式
-
-所有操作通过 `curl` 调用 HTTP Bridge：
-
-```bash
-# 检查连接状态（GET）
-curl -s http://127.0.0.1:18790/api/status
-
-# 执行操作（POST + JSON body）
-curl -s -X POST http://127.0.0.1:18790/api/screenshot \
-  -H 'Content-Type: application/json' \
-  -d '{"quality":50}'
-
-curl -s -X POST http://127.0.0.1:18790/api/tap \
-  -H 'Content-Type: application/json' \
-  -d '{"x":540,"y":960}'
-```
-
 ### 工具列表
 
-| 工具 | 端点 | 方法 | 关键参数 |
-|------|------|------|---------|
-| 连接状态 | `/api/status` | GET | — |
-| 截图 | `/api/screenshot` | POST | quality(1-100), maxSize |
-| 点击 | `/api/tap` | POST | x, y |
-| 长按 | `/api/long_click` | POST | x, y |
-| 滑动 | `/api/swipe` | POST | startX, startY, endX, endY, duration(ms) |
-| 滚动 | `/api/scroll` | POST | direction: up/down/left/right |
-| 输入文字 | `/api/type` | POST | text |
-| 按键 | `/api/press_key` | POST | key: home/back/power/recent/enter |
-| 按文字点击 | `/api/click_by_text` | POST | text, index |
-| 打开应用 | `/api/open_app` | POST | name(应用名或包名) |
-| UI 树 | `/api/get_ui_tree` | POST | — |
-| 查找元素 | `/api/find_element` | POST | text, resourceId, className |
-| 读取文字 | `/api/read_ui_text` | POST | filter, exclude |
-| 设备信息 | `/api/device_info` | POST | type: apps/battery/storage/network/all |
-| Shell 命令 | `/api/execute_shell` | POST | command, timeout(sec) |
-| 应用列表 | `/api/list_packages` | POST | thirdPartyOnly, includeVersions |
-| 应用详情 | `/api/get_app_info` | POST | package(包名) |
-| 强制停止 | `/api/force_stop_app` | POST | package(包名) |
-| 卸载应用 | `/api/uninstall_app` | POST | package, keepData |
-| 安装APK | `/api/install_apk` | POST | path(设备路径) |
-| 清除数据 | `/api/clear_app_data` | POST | package(包名) |
-| 发送短信 | `/api/send_sms` | POST | destination, text |
-| 读取短信 | `/api/read_sms` | POST | limit, unreadOnly |
-| 接听来电 | `/api/accept_call` | POST | — |
-| 挂断电话 | `/api/end_call` | POST | — |
-| 拨打电话 | `/api/make_call` | POST | number |
-| 开启音频 | `/api/open_audio_channel` | POST | mode: telephony/voip |
-| 关闭音频 | `/api/close_audio_channel` | POST | — |
+所有工具通过原生 node 命令调用（无需 curl）：
+
+| 命令 | 描述 | 关键参数 |
+|------|------|---------|
+| `device.screenshot` | 截图 | quality(1-100), maxSize |
+| `device.tap` | 点击 | x, y |
+| `device.long_click` | 长按 | x, y |
+| `device.swipe` | 滑动 | startX, startY, endX, endY, duration(ms) |
+| `device.scroll` | 滚动 | direction: up/down/left/right |
+| `device.type` | 输入文字 | text |
+| `device.press_key` | 按键 | key: home/back/power/recent/enter |
+| `device.click_by_text` | 按文字点击 | text, index |
+| `device.open_app` | 打开应用 | name(包名) |
+| `device.ui_tree` | UI 树 | — |
+| `device.find_element` | 查找元素 | text, resourceId, className |
+| `device.read_ui_text` | 读取文字 | filter, exclude |
+| `device.info` | 设备信息 | type: apps/battery/storage/network/all |
+| `device.status` | 连接状态 | — |
+| `device.shell` | Shell 命令 | command, timeout(sec) |
+| `app.list` | 应用列表 | thirdPartyOnly, includeVersions |
+| `app.info` | 应用详情 | package(包名) |
+| `app.stop` | 强制停止 | package(包名) |
+| `app.uninstall` | 卸载应用 | package, keepData |
+| `app.install` | 安装APK | path(设备路径) |
+| `app.clear_data` | 清除数据 | package(包名) |
+| `sms.send` | 发送短信 | destination, text |
+| `sms.read` | 读取短信 | limit, unreadOnly |
+| `call.accept` | 接听来电 | — |
+| `call.end` | 挂断电话 | — |
+| `call.make` | 拨打电话 | number |
+| `audio.open` | 开启音频 | mode: telephony/voip |
+| `audio.close` | 关闭音频 | — |
+
+### HTTP Bridge (内部使用)
+
+Node Host 内部通过 HTTP Bridge (`http://127.0.0.1:18790`) 转发请求。Bridge 同时被 TutuAI 和 SkillEngine 使用，不可关闭。
 
 ### 错误处理
 
@@ -86,7 +91,7 @@ curl -s -X POST http://127.0.0.1:18790/api/tap \
 
 ### 常用应用包名
 
-**open_app 必须传包名，不能传中文名！** 用户说"打开微信"→ 你传 `com.tencent.mm`，不认识的应用先用 `list_packages` 查。
+**open_app 必须传包名，不能传中文名！** 用户说"打开微信"→ 你传 `com.tencent.mm`，不认识的应用先用 `app.list` 查。
 
 ```
 com.tencent.mm           — 微信
@@ -106,10 +111,10 @@ com.android.chrome       — Chrome
 
 ## 注意事项
 
-- **优先使用专用 API 端点**（`list_packages`、`get_device_info`、`read_sms`、`get_app_info` 等），它们返回结构化 JSON 数据。`execute_shell` 仅用于没有专用端点覆盖的操作。
-- `get_device_info` 返回电池、网络、存储、内存、屏幕、前台应用等完整设备状态。
-- 应用管理操作（卸载、清除数据）是不可逆的，操作前需确认。
-- 短信发送需用户确认后才能执行。
+- **工具通过原生 node 命令调用**，不需要 curl 或脚本
+- 优先使用专用命令（`app.list`、`device.info`、`sms.read`）获取结构化数据
+- 应用管理操作（卸载、清除数据）是不可逆的，操作前需确认
+- 短信发送需用户确认后才能执行
 
 ## Cloud Browser (Browserless.io)
 
@@ -137,7 +142,8 @@ $PREFIX/bin/curl -s -X POST \
 ## 环境信息
 
 - **设备类型:** Android (通过 MeowHub App 连接)
-- **Bridge 服务:** MeowHub HTTP Bridge on 127.0.0.1:18790
+- **Node Host:** MeowHub Node Host (WebSocket → Gateway :18789)
+- **Bridge 服务:** MeowHub HTTP Bridge on 127.0.0.1:18790 (内部使用)
 - **AI Gateway:** OpenClaw on 127.0.0.1:18789
 - **Socket 后端:** TutuGui Server on 127.0.0.1:28200 (App 内部管理)
 - **云浏览器:** Browserless.io (production-sfo)

@@ -128,6 +128,26 @@ MeowHub 是目前为数不多的，能让 AI **真正触达物理设备、执行
 - ADB 配对前增加设置须知弹窗
 - 通知权限改为跳转系统设置页面
 
+### OpenClaw Node Host — 作为 OpenClaw 的手和脚
+
+MeowHub 通过 WebSocket 将自身注册为 **OpenClaw Node 节点**，把 28 个设备控制命令（点击、滑动、截图、短信、通话、应用管理等）暴露为 **原生工具**，OpenClaw AI 可以直接调用。不需要 curl 脚本，不需要 MCP 适配器 — AI 只需调用 `nodes` 工具，传入 `action: "invoke"` 和 `node: "MeowHub"` 即可。
+
+```
+OpenClaw AI
+    ↓ nodes 工具 (action=invoke, node=MeowHub)
+OpenClaw Gateway (:18789)
+    ↓ WebSocket (node.invoke.request / node.invoke.result)
+MeowHub Node Host (meowhub-node-host.js)
+    ↓ HTTP
+MeowHub Bridge Server (:18790)
+    ↓ SocketCommandBridge
+TutuGui Server (:28200)
+    ↓
+触摸 / 滑动 / 截图 / UI 树 / 应用管理 / 短信 / 通话
+```
+
+这让 MeowHub 成为 **OpenClaw 的手和脚** — AI 负责思考和决策，MeowHub 在物理设备上执行操作。
+
 ### 工作原理
 
 ```

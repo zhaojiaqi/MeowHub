@@ -32,6 +32,7 @@ class OpenClawGatewayManager(private val context: Context) {
 
     private var healthCheckJob: Job? = null
     private var logReaderJob: Job? = null
+    private var nodeHostProcess: Process? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val prefix = TermuxConstants.TERMUX_PREFIX_DIR_PATH
@@ -275,9 +276,64 @@ class OpenClawGatewayManager(private val context: Context) {
         }
     }
 
+    fun launchNodeHost() {
+        scope.launch {
+            stopNodeHost()
+            val nodeHostScript = File("$home/.meowhub/node-host.js")
+            if (!nodeHostScript.exists()) {
+                Log.w(TAG, "launchNodeHost: node-host.js not found at ${nodeHostScript.absolutePath}")
+                return@launch
+            }
+            val nodeBin = "$prefix/bin/node"
+            if (!File(nodeBin).exists()) {
+                Log.w(TAG, "launchNodeHost: node binary not found at $nodeBin")
+                return@launch
+            }
+            try {
+                val envp = arrayOf(
+                    "PREFIX=$prefix",
+                    "HOME=$home",
+                    "LD_LIBRARY_PATH=$prefix/lib",
+                    "PATH=$prefix/bin:$prefix/bin/applets:/system/bin",
+                    "NODE_OPTIONS=-r $home/bionic-compat.js",
+                    "SHARP_IGNORE_GLOBAL_LIBVIPS=1"
+                )
+                nodeHostProcess = Runtime.getRuntime().exec(
+                    arrayOf(nodeBin, nodeHostScript.absolutePath),
+                    envp
+                )
+                Log.i(TAG, "launchNodeHost: started node-host process (pid=${nodeHostProcess?.toString()})")
+
+                // Read stderr for logging
+                launch {
+                    try {
+                        nodeHostProcess?.errorStream?.bufferedReader()?.forEachLine { line ->
+                            Log.i("NodeHost", line)
+                        }
+                    } catch (_: Exception) {}
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "launchNodeHost: FAILED", e)
+            }
+        }
+    }
+
+    private fun stopNodeHost() {
+        nodeHostProcess?.let { proc ->
+            try {
+                proc.destroy()
+                Log.i(TAG, "stopNodeHost: destroyed node-host process")
+            } catch (e: Exception) {
+                Log.w(TAG, "stopNodeHost: failed: ${e.message}")
+            }
+            nodeHostProcess = null
+        }
+    }
+
     fun cleanup() {
         healthCheckJob?.cancel()
         logReaderJob?.cancel()
+        stopNodeHost()
         scope.cancel()
     }
 

@@ -122,6 +122,8 @@ class TerminalForegroundService : Service() {
             }
             onFirstHealthy = {
                 Log.i(TAG, "Gateway first healthy")
+                openClawInstaller.copyNodeHostFromAssets()
+                gatewayManager.launchNodeHost()
                 printWelcomeBanner()
             }
         }
@@ -191,6 +193,7 @@ class TerminalForegroundService : Service() {
         serviceScope.launch {
             Log.i(TAG, "startGateway: manual start")
             openClawInstaller.copyMcpServerFromAssets()
+            openClawInstaller.copyNodeHostFromAssets()
             writeOpenClawConfigFromBuildConfig()
             bridgeServer.start()
             gatewayManager.startGateway(termuxService)
@@ -323,6 +326,7 @@ class TerminalForegroundService : Service() {
             Log.i(TAG, "autoStartGatewayIfReady: openClawInstalled=$installed")
             if (installed) {
                 openClawInstaller.copyMcpServerFromAssets()
+                openClawInstaller.copyNodeHostFromAssets()
                 openClawInstaller.copyWorkspaceFilesFromAssets()
                 writeOpenClawConfigFromBuildConfig()
                 bridgeServer.start()

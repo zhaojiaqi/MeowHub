@@ -128,6 +128,26 @@ MeowHub is one of the few open-source solutions that lets AI **truly reach physi
 - ADB pairing now shows a setup notice dialog first
 - Notification permission redirects to system settings page
 
+### OpenClaw Node Host — The Hands and Feet of OpenClaw
+
+MeowHub registers itself as an **OpenClaw Node** via WebSocket, exposing 28 device control commands (tap, swipe, screenshot, SMS, calls, app management, etc.) as **native tools** that OpenClaw AI can invoke directly. No curl scripts, no MCP adapters — the AI simply calls `nodes` tool with `action: "invoke"` and `node: "MeowHub"`.
+
+```
+OpenClaw AI
+    ↓ nodes tool (action=invoke, node=MeowHub)
+OpenClaw Gateway (:18789)
+    ↓ WebSocket (node.invoke.request / node.invoke.result)
+MeowHub Node Host (meowhub-node-host.js)
+    ↓ HTTP
+MeowHub Bridge Server (:18790)
+    ↓ SocketCommandBridge
+TutuGui Server (:28200)
+    ↓
+Touch / Swipe / Screenshot / UI Tree / App Mgmt / SMS / Calls
+```
+
+This makes MeowHub the **hands and feet of OpenClaw** — the AI thinks and decides, MeowHub executes on the physical device.
+
 ### How It Works
 
 ```
