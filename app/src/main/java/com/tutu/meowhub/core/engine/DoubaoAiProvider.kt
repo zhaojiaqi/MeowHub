@@ -53,17 +53,20 @@ class DoubaoAiProvider(
         onToken: ((String) -> Unit)?
     ): String {
         val input = buildJsonArray {
-            addJsonObject {
-                put("role", "system")
-                put("content", buildJsonArray {
-                    addJsonObject {
-                        put("type", "input_text")
-                        put("text", prompt)
-                    }
-                })
+            if (prompt.isNotBlank()) {
+                addJsonObject {
+                    put("role", "system")
+                    put("content", buildJsonArray {
+                        addJsonObject {
+                            put("type", "input_text")
+                            put("text", prompt)
+                        }
+                    })
+                }
             }
 
             for (msg in history) {
+                if (msg.content.isBlank()) continue
                 addJsonObject {
                     put("role", msg.role)
                     put("content", buildJsonArray {
