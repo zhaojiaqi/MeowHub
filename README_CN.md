@@ -11,7 +11,7 @@
   <br/>
   <code>SUB-BRAND · OpenClaw / MeowClaw</code>
   <br/>
-  <b>Built-in Full OpenClaw Runtime</b>
+  <b>Built-in Full OpenClaw Runtime (2026.3.13)</b>
   <br/>
   <span>The lobster way 🦞</span>
 </p>

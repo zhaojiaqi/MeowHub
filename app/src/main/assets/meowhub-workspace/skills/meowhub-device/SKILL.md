@@ -13,7 +13,16 @@ You have direct control over an Android phone through MeowHub. All 28 device com
 
 ## How to invoke commands
 
-Use the `nodes` tool with `action: "invoke"`, `node: "MeowHub"`, and the command name:
+**Screenshot** — use `action: "camera_snap"` (renders image natively in UI):
+
+```
+Tool: nodes
+Parameters:
+  action: "camera_snap"
+  node: "MeowHub"
+```
+
+**All other commands** — use `action: "invoke"`:
 
 ```
 Tool: nodes
@@ -88,7 +97,7 @@ Parameters:
 
 ## Standard Operation Flow
 
-1. **Screenshot + Analyze** — use `device.screenshot` to capture screen, analyze visually
+1. **Screenshot + Analyze** — use `action: "camera_snap"` to capture screen, analyze visually
 2. **Act** — tap, swipe, type based on what you see
 3. **Verify** — screenshot again to confirm (optional)
 

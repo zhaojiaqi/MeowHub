@@ -731,6 +731,7 @@ class OpenClawInstaller(private val context: Context) {
         val nodes = gateway.getOrPut("nodes")
         val allowCommands = JSONArray()
         val meowHubCommands = arrayOf(
+            "camera.snap",
             "device.screenshot", "device.tap", "device.long_click", "device.swipe",
             "device.scroll", "device.type", "device.press_key", "device.click_by_text",
             "device.open_app", "device.ui_tree", "device.find_element", "device.read_ui_text",

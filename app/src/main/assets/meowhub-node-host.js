@@ -24,6 +24,7 @@ const CLIENT_VERSION = '1.0.0';
 
 // ── Command definitions ──────────────────────────────────────────────
 const COMMANDS = [
+  { name: 'camera.snap',         endpoint: 'screenshot',         method: 'POST', desc: 'Take a screenshot (camera.snap protocol)', params: { facing: 'string?', maxWidth: 'number?', quality: 'number?', format: 'string?' } },
   { name: 'device.screenshot',   endpoint: 'screenshot',         method: 'POST', desc: 'Take a screenshot', params: { quality: 'number?', maxSize: 'number?' } },
   { name: 'device.tap',          endpoint: 'tap',                 method: 'POST', desc: 'Tap at coordinates', params: { x: 'number', y: 'number' } },
   { name: 'device.long_click',   endpoint: 'long_click',          method: 'POST', desc: 'Long click at coordinates', params: { x: 'number', y: 'number', duration: 'number?' } },
@@ -55,7 +56,7 @@ const COMMANDS = [
 ];
 
 const COMMAND_MAP = Object.fromEntries(COMMANDS.map(c => [c.name, c]));
-const CAPS = ['device', 'sms', 'call', 'audio', 'app'];
+const CAPS = ['device', 'sms', 'call', 'audio', 'app', 'camera'];
 
 // ── HTTP Bridge helpers ──────────────────────────────────────────────
 function callBridge(endpoint, params = {}) {
@@ -363,6 +364,20 @@ async function handleInvoke(payload) {
     } else {
       result = await callBridge(cmd.endpoint, params);
     }
+
+    // camera.snap: convert Bridge response to Gateway camera.snap protocol
+    // Gateway expects: { format, base64, width, height }
+    if (command === 'camera.snap' && result && result.data) {
+      const cameraResult = {
+        format: 'jpg',
+        base64: result.data,
+        width: result.width || 0,
+        height: result.height || 0
+      };
+      sendInvokeResult(id, true, cameraResult);
+      return;
+    }
+
     sendInvokeResult(id, true, result);
   } catch (e) {
     log(`Invoke error for ${command}: ${e.message}`);
