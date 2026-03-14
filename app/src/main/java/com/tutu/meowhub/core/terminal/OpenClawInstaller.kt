@@ -404,22 +404,23 @@ class OpenClawInstaller(private val context: Context) {
         }
     }
 
-    fun copyNodeHostFromAssets() {
-        val destDir = File("$home/.meowhub")
-        destDir.mkdirs()
-        val destFile = File(destDir, "node-host.js")
-        try {
-            context.assets.open("meowhub-node-host.js").use { input ->
-                destFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            destFile.setExecutable(true)
-            Log.i(TAG, "copyNodeHostFromAssets: copied to ${destFile.absolutePath} (${destFile.length()} bytes)")
-        } catch (e: Exception) {
-            Log.e(TAG, "copyNodeHostFromAssets: FAILED", e)
-        }
-    }
+    // Node Host disabled — reverted to MCP/curl mode for better upgrade compatibility
+    // fun copyNodeHostFromAssets() {
+    //     val destDir = File("$home/.meowhub")
+    //     destDir.mkdirs()
+    //     val destFile = File(destDir, "node-host.js")
+    //     try {
+    //         context.assets.open("meowhub-node-host.js").use { input ->
+    //             destFile.outputStream().use { output ->
+    //                 input.copyTo(output)
+    //             }
+    //         }
+    //         destFile.setExecutable(true)
+    //         Log.i(TAG, "copyNodeHostFromAssets: copied to ${destFile.absolutePath} (${destFile.length()} bytes)")
+    //     } catch (e: Exception) {
+    //         Log.e(TAG, "copyNodeHostFromAssets: FAILED", e)
+    //     }
+    // }
 
     fun copyDebsFromAssets() {
         val destDir = File("$home/.meowhub/debs")
@@ -727,24 +728,11 @@ class OpenClawInstaller(private val context: Context) {
         gateway.put("port", 18789)
         gateway.getOrPut("controlUi").put("enabled", true).put("basePath", "/openclaw")
 
-        // Allow MeowHub node commands through the gateway allowlist
-        val nodes = gateway.getOrPut("nodes")
-        val allowCommands = JSONArray()
-        val meowHubCommands = arrayOf(
-            "camera.snap",
-            "device.screenshot", "device.tap", "device.long_click", "device.swipe",
-            "device.scroll", "device.type", "device.press_key", "device.click_by_text",
-            "device.open_app", "device.ui_tree", "device.find_element", "device.read_ui_text",
-            "device.info", "device.status", "device.shell",
-            "app.list", "app.info", "app.stop", "app.uninstall", "app.install", "app.clear_data",
-            "sms.send", "sms.read",
-            "call.accept", "call.end", "call.make",
-            "audio.open", "audio.close"
-        )
-        for (cmd in meowHubCommands) {
-            allowCommands.put(cmd)
-        }
-        nodes.put("allowCommands", allowCommands)
+        // Node Host allowCommands disabled — reverted to MCP/curl mode
+        // val nodes = gateway.getOrPut("nodes")
+        // val allowCommands = JSONArray()
+        // val meowHubCommands = arrayOf(...)
+        // nodes.put("allowCommands", allowCommands)
     }
 
     private fun JSONObject.getOrPut(key: String): JSONObject {
