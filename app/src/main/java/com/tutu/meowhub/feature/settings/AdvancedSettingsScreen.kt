@@ -166,30 +166,43 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
                         ) {
                             OutlinedTextField(
                                 value = selectedModel,
-                                onValueChange = {},
-                                readOnly = true,
+                                onValueChange = {
+                                    selectedModel = it
+                                    settingsManager.modelId = it
+                                    if (!modelDropdownExpanded) modelDropdownExpanded = true
+                                },
+                                readOnly = false,
                                 label = { Text(stringResource(R.string.model_id_label)) },
+                                placeholder = { Text(stringResource(R.string.model_id_placeholder)) },
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelDropdownExpanded)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
+                                singleLine = true,
                                 shape = RoundedCornerShape(12.dp)
                             )
-                            ExposedDropdownMenu(
-                                expanded = modelDropdownExpanded,
-                                onDismissRequest = { modelDropdownExpanded = false }
-                            ) {
-                                effectiveModels.forEach { model ->
-                                    DropdownMenuItem(
-                                        text = { Text(model) },
-                                        onClick = {
-                                            selectedModel = model
-                                            settingsManager.modelId = model
-                                            modelDropdownExpanded = false
-                                        }
-                                    )
+
+                            // Filter dropdown list based on user input
+                            val filteredModels = effectiveModels.filter {
+                                it.contains(selectedModel, ignoreCase = true)
+                            }
+                            if (filteredModels.isNotEmpty()) {
+                                ExposedDropdownMenu(
+                                    expanded = modelDropdownExpanded,
+                                    onDismissRequest = { modelDropdownExpanded = false }
+                                ) {
+                                    filteredModels.forEach { model ->
+                                        DropdownMenuItem(
+                                            text = { Text(model) },
+                                            onClick = {
+                                                selectedModel = model
+                                                settingsManager.modelId = model
+                                                modelDropdownExpanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

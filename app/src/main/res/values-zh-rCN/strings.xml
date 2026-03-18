@@ -263,6 +263,7 @@
     <string name="api_key_label">API 密钥</string>
     <string name="api_key_placeholder">输入你的 API 密钥</string>
     <string name="model_id_label">模型</string>
+    <string name="model_id_placeholder">选择或输入模型名称</string>
     <string name="base_url_label">接口地址</string>
     <string name="show">显示</string>
     <string name="hide">隐藏</string>

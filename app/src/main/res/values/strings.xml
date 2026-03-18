@@ -462,6 +462,7 @@
     <string name="api_key_label">API Key</string>
     <string name="api_key_placeholder">Enter your API key</string>
     <string name="model_id_label">Model</string>
+    <string name="model_id_placeholder">Select or type model name</string>
     <string name="base_url_label">Base URL</string>
     <string name="show">Show</string>
     <string name="hide">Hide</string>
