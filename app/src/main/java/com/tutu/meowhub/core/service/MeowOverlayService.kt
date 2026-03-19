@@ -31,6 +31,11 @@ import com.tutu.meowhub.R
 import com.tutu.meowhub.core.engine.SkillEngine
 import com.tutu.meowhub.feature.overlay.OverlayContent
 import com.tutu.meowhub.feature.overlay.ResultOverlayContent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.util.Log
+import androidx.core.content.ContextCompat
+import com.tutu.meowhub.core.voice.VoiceSessionManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -45,6 +50,7 @@ class MeowOverlayService : Service() {
     private val lifecycleOwner = OverlayLifecycleOwner()
     private var engineObserverJob: Job? = null
     private var actionLabelJob: Job? = null
+    private var wakeWordJob: Job? = null
     private var overlayParams: WindowManager.LayoutParams? = null
 
     override fun onCreate() {
@@ -56,6 +62,8 @@ class MeowOverlayService : Service() {
         showActionLabel()
         observeEngineFinish()
         observeActionLabel()
+        startWakeWordIfEnabled()
+        observeVoiceStateForWakeWord()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -73,6 +81,8 @@ class MeowOverlayService : Service() {
     override fun onDestroy() {
         engineObserverJob?.cancel()
         actionLabelJob?.cancel()
+        wakeWordJob?.cancel()
+        MeowApp.instance.wakeWordDetector.stop()
         dismissResult()
         removeActionLabel()
         removeOverlay()
@@ -306,7 +316,51 @@ class MeowOverlayService : Service() {
             .build()
     }
 
+    private fun startWakeWordIfEnabled() {
+        val app = MeowApp.instance
+        val settings = app.aiSettings
+        if (!settings.wakeWordEnabled) return
+        if (settings.effectivePicovoiceAccessKey.isBlank()) {
+            Log.w(TAG, "Wake word enabled but no Picovoice access key")
+            return
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "Wake word enabled but RECORD_AUDIO permission not granted")
+            return
+        }
+        Log.i(TAG, "Starting wake word detector")
+        app.wakeWordDetector.start()
+    }
+
+    /**
+     * 观察语音会话状态：语音结束回到 IDLE 后，自动重新启动唤醒词检测。
+     */
+    private fun observeVoiceStateForWakeWord() {
+        wakeWordJob = CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
+            MeowApp.instance.voiceSessionManager.voiceState.collect { state ->
+                if (state == VoiceSessionManager.VoiceState.IDLE) {
+                    val settings = MeowApp.instance.aiSettings
+                    if (settings.wakeWordEnabled &&
+                        settings.effectivePicovoiceAccessKey.isNotBlank() &&
+                        ContextCompat.checkSelfPermission(
+                            this@MeowOverlayService,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        if (!MeowApp.instance.wakeWordDetector.isListening.value) {
+                            Log.i(TAG, "Voice session ended, restarting wake word detector")
+                            MeowApp.instance.wakeWordDetector.start()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     companion object {
+        private const val TAG = "MeowOverlayService"
         const val CHANNEL_ID = "meow_overlay"
         const val NOTIFICATION_ID = 1001
         const val ACTION_STOP = "com.tutu.meowhub.STOP_OVERLAY"

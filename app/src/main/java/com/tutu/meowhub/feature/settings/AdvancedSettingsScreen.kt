@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +49,14 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
     var tutuAppId by remember { mutableStateOf(settingsManager.tutuAppId) }
     var tutuAppSecret by remember { mutableStateOf(settingsManager.tutuAppSecret) }
     var showTutuSecret by remember { mutableStateOf(false) }
+
+    var speechAppId by remember { mutableStateOf(settingsManager.speechAppId) }
+    var speechAccessKey by remember { mutableStateOf(settingsManager.speechAccessKey) }
+    var showSpeechKey by remember { mutableStateOf(false) }
+
+    var wakeWordEnabled by remember { mutableStateOf(settingsManager.wakeWordEnabled) }
+    var picovoiceAccessKey by remember { mutableStateOf(settingsManager.picovoiceAccessKey) }
+    var showPicovoiceKey by remember { mutableStateOf(false) }
 
     var testState by remember { mutableStateOf<TestState>(TestState.Idle) }
 
@@ -433,6 +443,176 @@ fun AdvancedSettingsScreen(onBack: () -> Unit) {
                             TextButton(onClick = { showTutuSecret = !showTutuSecret }) {
                                 Text(
                                     if (showTutuSecret) stringResource(R.string.hide)
+                                    else stringResource(R.string.show)
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            // 语音 API 设置
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.Mic,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "语音 API 设置",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        "配置豆包实时语音 API，用于悬浮球双击语音对话。留空则使用内置凭据。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = speechAppId,
+                        onValueChange = {
+                            speechAppId = it
+                            settingsManager.speechAppId = it
+                        },
+                        label = { Text("Speech App ID") },
+                        placeholder = { Text("留空使用默认") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = speechAccessKey,
+                        onValueChange = {
+                            speechAccessKey = it
+                            settingsManager.speechAccessKey = it
+                        },
+                        label = { Text("Speech Access Key") },
+                        placeholder = { Text("留空使用默认") },
+                        visualTransformation = if (showSpeechKey)
+                            VisualTransformation.None
+                        else
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = { showSpeechKey = !showSpeechKey }) {
+                                Text(
+                                    if (showSpeechKey) stringResource(R.string.hide)
+                                    else stringResource(R.string.show)
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            // 语音唤醒设置
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.RecordVoiceOver,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "语音唤醒",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        "启用后，对着手机说「图图」即可免触控唤醒语音助手。需要悬浮窗服务运行中。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "启用语音唤醒",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                "唤醒词：「图图」",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = wakeWordEnabled,
+                            onCheckedChange = {
+                                wakeWordEnabled = it
+                                settingsManager.wakeWordEnabled = it
+                            }
+                        )
+                    }
+
+                    if (wakeWordEnabled && settingsManager.effectivePicovoiceAccessKey.isBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "缺少 Picovoice Access Key，请在下方填写或在 secrets.properties 中配置 PICOVOICE_ACCESS_KEY",
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = picovoiceAccessKey,
+                        onValueChange = {
+                            picovoiceAccessKey = it
+                            settingsManager.picovoiceAccessKey = it
+                        },
+                        label = { Text("Picovoice Access Key") },
+                        placeholder = { Text("留空使用默认") },
+                        visualTransformation = if (showPicovoiceKey)
+                            VisualTransformation.None
+                        else
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = { showPicovoiceKey = !showPicovoiceKey }) {
+                                Text(
+                                    if (showPicovoiceKey) stringResource(R.string.hide)
                                     else stringResource(R.string.show)
                                 )
                             }

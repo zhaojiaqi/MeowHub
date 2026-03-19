@@ -37,6 +37,9 @@ android {
         buildConfigField("String", "DOUBAO_MODEL_ID", "\"${secret("DOUBAO_MODEL_ID", "doubao-seed-2-0-lite-260215")}\"")
         buildConfigField("String", "TUTU_APP_ID", "\"${secret("TUTU_APP_ID")}\"")
         buildConfigField("String", "TUTU_APP_SECRET", "\"${secret("TUTU_APP_SECRET")}\"")
+        buildConfigField("String", "DOUBAO_SPEECH_APP_ID", "\"${secret("DOUBAO_SPEECH_APP_ID")}\"")
+        buildConfigField("String", "DOUBAO_SPEECH_ACCESS_KEY", "\"${secret("DOUBAO_SPEECH_ACCESS_KEY")}\"")
+        buildConfigField("String", "PICOVOICE_ACCESS_KEY", "\"${secret("PICOVOICE_ACCESS_KEY")}\"")
     }
 
     buildTypes {
@@ -97,9 +100,11 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("ai.picovoice:porcupine-android:4.0.0")
     implementation(project(":terminal-view"))
     implementation(project(":termux-shared"))
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

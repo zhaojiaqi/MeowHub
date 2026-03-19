@@ -13,6 +13,8 @@ import com.tutu.meowhub.core.database.MeowHubDatabase
 import com.tutu.meowhub.core.engine.*
 import com.tutu.meowhub.core.service.TerminalForegroundService
 import com.tutu.meowhub.core.settings.AiSettingsManager
+import com.tutu.meowhub.core.voice.VoiceSessionManager
+import com.tutu.meowhub.core.voice.WakeWordDetector
 import com.tutu.meowhub.core.settings.AppToolManager
 import com.tutu.meowhub.core.network.MeowHubApiClient
 import com.tutu.meowhub.core.socket.TutuSocketClient
@@ -39,6 +41,26 @@ class MeowApp : Application() {
     val apiClient: MeowHubApiClient by lazy { MeowHubApiClient() }
     val aiSettings: AiSettingsManager by lazy { AiSettingsManager(this) }
     val appToolManager: AppToolManager by lazy { AppToolManager(this) }
+
+    val voiceSessionManager: VoiceSessionManager by lazy {
+        VoiceSessionManager(
+            context = this,
+            appId = aiSettings.effectiveSpeechAppId,
+            accessKey = aiSettings.effectiveSpeechAccessKey
+        )
+    }
+
+    val wakeWordDetector: WakeWordDetector by lazy {
+        WakeWordDetector(
+            context = this,
+            accessKey = aiSettings.effectivePicovoiceAccessKey,
+            onWakeWordDetected = {
+                Log.i(TAG, "Wake word detected, starting voice session")
+                wakeWordDetector.stop()
+                voiceSessionManager.startSession()
+            }
+        )
+    }
 
     val database: MeowHubDatabase by lazy { MeowHubDatabase.getInstance(this) }
     val skillRepository: LocalSkillRepository by lazy { LocalSkillRepository(database.skillDao()) }
@@ -68,6 +90,13 @@ class MeowApp : Application() {
 
     private val _socketAuthRequiredEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val socketAuthRequiredEvent: SharedFlow<Unit> = _socketAuthRequiredEvent.asSharedFlow()
+
+    private val _recordPermissionEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val recordPermissionEvent: SharedFlow<Unit> = _recordPermissionEvent.asSharedFlow()
+
+    fun requestRecordPermission() {
+        _recordPermissionEvent.tryEmit(Unit)
+    }
 
     private val _chatActionLabel = MutableStateFlow<String?>(null)
     val chatActionLabel: StateFlow<String?> = _chatActionLabel.asStateFlow()
