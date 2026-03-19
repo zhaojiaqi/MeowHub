@@ -1,6 +1,8 @@
 package com.tutu.meowhub
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -17,9 +19,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.service.MeowOverlayService
 import com.tutu.meowhub.feature.account.AccountScreen
@@ -43,6 +47,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val recordPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // 权限授予后自动启动语音会话
+            MeowApp.instance.voiceSessionManager.startSession()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -50,6 +63,17 @@ class MainActivity : ComponentActivity() {
 
         if (Settings.canDrawOverlays(this)) {
             MeowOverlayService.start(this)
+        }
+
+        // 监听录音权限请求事件
+        lifecycleScope.launch {
+            MeowApp.instance.recordPermissionEvent.collect {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
         }
 
         setContent {

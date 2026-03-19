@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -29,11 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.Manifest
+import android.content.pm.PackageManager
 import com.tutu.meowhub.MeowApp
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.engine.SkillEngine
 import com.tutu.meowhub.core.model.ConnectionState
 import com.tutu.meowhub.core.socket.TutuSocketClient
+import com.tutu.meowhub.core.voice.VoiceSessionManager
 import com.tutu.meowhub.ui.theme.*
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -50,13 +54,19 @@ private val SkillActiveGlow2 = Color(0xFF7C4DFF)
 private val SkillActiveGlow3 = Color(0xFF00E5FF)
 private val SkillPausedGlow = Color(0xFFFFB74D)
 
+private val VoiceActiveGlow1 = Color(0xFFE53935)
+private val VoiceActiveGlow2 = Color(0xFF9C27B0)
+private val VoiceActiveGlow3 = Color(0xFFE53935)
+private const val DOUBLE_TAP_TIMEOUT_MS = 300L
+
 @Composable
 fun OverlayContent(
     client: TutuSocketClient,
     onDragUpdate: (Float, Float) -> Unit,
     onClose: () -> Unit,
     onRequestFocus: () -> Unit = {},
-    onReleaseFocus: () -> Unit = {}
+    onReleaseFocus: () -> Unit = {},
+    onRequestRecordPermission: (() -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     val connectionState by client.connectionState.collectAsState()
@@ -71,6 +81,15 @@ fun OverlayContent(
     val isSkillActive = engineState == SkillEngine.EngineState.RUNNING ||
             engineState == SkillEngine.EngineState.PAUSED ||
             engineState == SkillEngine.EngineState.LOADING
+
+    // 语音状态
+    val voiceManager = MeowApp.instance.voiceSessionManager
+    val voiceState by voiceManager.voiceState.collectAsState()
+    val isVoiceActive = voiceState != VoiceSessionManager.VoiceState.IDLE
+
+    // 双击检测
+    var lastTapTime by remember { mutableStateOf(0L) }
+    var pendingTapJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (expanded) {
@@ -94,7 +113,42 @@ fun OverlayContent(
                 connectionState = connectionState,
                 isSkillActive = isSkillActive,
                 isPaused = engineState == SkillEngine.EngineState.PAUSED,
-                onTap = { expanded = true },
+                isVoiceActive = isVoiceActive,
+                voiceState = voiceState,
+                onTap = {
+                    val now = System.currentTimeMillis()
+                    if (now - lastTapTime < DOUBLE_TAP_TIMEOUT_MS) {
+                        // 双击 → 切换语音
+                        pendingTapJob?.cancel()
+                        pendingTapJob = null
+                        lastTapTime = 0L
+                        // 如果要启动语音，先检查录音权限
+                        val app = MeowApp.instance
+                        if (voiceState == VoiceSessionManager.VoiceState.IDLE) {
+                            val hasPermission = app.checkSelfPermission(
+                                Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                voiceManager.toggle()
+                            } else {
+                                // 通知 Activity 请求权限（授予后会自动启动语音）
+                                app.requestRecordPermission()
+                            }
+                        } else {
+                            voiceManager.toggle()
+                        }
+                    } else {
+                        // 首次点击 → 延迟判断
+                        lastTapTime = now
+                        pendingTapJob?.cancel()
+                        pendingTapJob = scope.launch {
+                            kotlinx.coroutines.delay(DOUBLE_TAP_TIMEOUT_MS)
+                            // 超时未双击 → 单击展开面板
+                            expanded = true
+                            lastTapTime = 0L
+                        }
+                    }
+                },
                 onDrag = onDragUpdate
             )
         }
@@ -123,6 +177,8 @@ private fun FloatingBubble(
     connectionState: ConnectionState,
     isSkillActive: Boolean,
     isPaused: Boolean,
+    isVoiceActive: Boolean,
+    voiceState: VoiceSessionManager.VoiceState,
     onTap: () -> Unit,
     onDrag: (Float, Float) -> Unit
 ) {
@@ -152,29 +208,66 @@ private fun FloatingBubble(
         label = "glowAlpha"
     )
 
-    val glowBrush = if (isSkillActive) {
-        val colors = if (isPaused) listOf(SkillPausedGlow, MeowOrange, SkillPausedGlow)
-        else listOf(SkillActiveGlow1, SkillActiveGlow2, SkillActiveGlow3, SkillActiveGlow1)
-        val rad = Math.toRadians(glowAngle.toDouble())
-        Brush.linearGradient(
-            colors = colors.map { it.copy(alpha = glowAlpha) },
-            start = Offset(
-                (26 + 26 * cos(rad)).toFloat(),
-                (26 + 26 * sin(rad)).toFloat()
-            ),
-            end = Offset(
-                (26 - 26 * cos(rad)).toFloat(),
-                (26 - 26 * sin(rad)).toFloat()
+    // 语音脉冲呼吸动画
+    val voicePulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "voicePulse"
+    )
+
+    val glowBrush = when {
+        isVoiceActive -> {
+            val colors = listOf(VoiceActiveGlow1, VoiceActiveGlow2, VoiceActiveGlow3, VoiceActiveGlow1)
+            val rad = Math.toRadians(glowAngle.toDouble())
+            Brush.linearGradient(
+                colors = colors.map { it.copy(alpha = glowAlpha) },
+                start = Offset(
+                    (26 + 26 * cos(rad)).toFloat(),
+                    (26 + 26 * sin(rad)).toFloat()
+                ),
+                end = Offset(
+                    (26 - 26 * cos(rad)).toFloat(),
+                    (26 - 26 * sin(rad)).toFloat()
+                )
             )
-        )
-    } else null
+        }
+        isSkillActive -> {
+            val colors = if (isPaused) listOf(SkillPausedGlow, MeowOrange, SkillPausedGlow)
+            else listOf(SkillActiveGlow1, SkillActiveGlow2, SkillActiveGlow3, SkillActiveGlow1)
+            val rad = Math.toRadians(glowAngle.toDouble())
+            Brush.linearGradient(
+                colors = colors.map { it.copy(alpha = glowAlpha) },
+                start = Offset(
+                    (26 + 26 * cos(rad)).toFloat(),
+                    (26 + 26 * sin(rad)).toFloat()
+                ),
+                end = Offset(
+                    (26 - 26 * cos(rad)).toFloat(),
+                    (26 - 26 * sin(rad)).toFloat()
+                )
+            )
+        }
+        else -> null
+    }
+
+    val bubbleScale = if (isVoiceActive && voiceState == VoiceSessionManager.VoiceState.ACTIVE) {
+        voicePulseScale
+    } else 1f
 
     Box(
         modifier = Modifier
             .size(52.dp)
+            .graphicsLayer(scaleX = bubbleScale, scaleY = bubbleScale)
             .shadow(8.dp, CircleShape)
             .clip(CircleShape)
-            .background(Brush.linearGradient(BubbleGradient))
+            .background(
+                if (isVoiceActive) Brush.linearGradient(listOf(VoiceActiveGlow1, VoiceActiveGlow2))
+                else Brush.linearGradient(BubbleGradient)
+            )
             .then(
                 if (glowBrush != null) Modifier.border(3.dp, glowBrush, CircleShape)
                 else Modifier.border(2.5.dp, statusColor.copy(alpha = 0.85f), CircleShape)
