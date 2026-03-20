@@ -5,12 +5,16 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.tutu.meowhub.BuildConfig
 import com.tutu.meowhub.MeowApp
 import com.tutu.meowhub.core.engine.DeviceInfoCache
 import com.tutu.meowhub.core.engine.SocketCommandBridge
 import com.tutu.meowhub.feature.chat.ChatAgent
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
@@ -23,9 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * 4. 任务/查询结果通过 ChatRAGText 注入豆包，RAG 音频直接播放
  */
 class VoiceSessionManager(
-    private val context: Context,
-    private val appId: String,
-    private val accessKey: String
+    private val context: Context
 ) {
     companion object {
         private const val TAG = "MeowVoice.Session"
@@ -37,6 +39,9 @@ class VoiceSessionManager(
     private val mainHandler = Handler(Looper.getMainLooper())
     private val _voiceState = MutableStateFlow(VoiceState.IDLE)
     val voiceState: StateFlow<VoiceState> = _voiceState.asStateFlow()
+
+    private val _voiceErrorEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val voiceErrorEvent: SharedFlow<String> = _voiceErrorEvent.asSharedFlow()
 
     private var socket: DoubaoVoiceSocket? = null
     private var recorder: MeowAudioRecorder? = null
@@ -53,6 +58,39 @@ class VoiceSessionManager(
             Log.w(TAG, "startSession() called but state=${_voiceState.value}")
             return
         }
+
+        val app = context.applicationContext as MeowApp
+        val aiSettings = app.aiSettings
+
+        // 决策连接配置（优先级：BuildConfig > 用户 UI 配置 > 登录中转 > 提示）
+        val connectionConfig: VoiceConnectionConfig
+        val bcAppId = BuildConfig.DOUBAO_SPEECH_APP_ID
+        val bcKey = BuildConfig.DOUBAO_SPEECH_ACCESS_KEY
+        val userAppId = aiSettings.speechAppId
+        val userKey = aiSettings.speechAccessKey
+
+        if (bcAppId.isNotBlank() && bcKey.isNotBlank()) {
+            Log.i(TAG, "Using BuildConfig speech credentials")
+            connectionConfig = VoiceConnectionConfig.Direct(bcAppId, bcKey)
+        } else if (userAppId.isNotBlank() && userKey.isNotBlank()) {
+            Log.i(TAG, "Using user-configured speech credentials")
+            connectionConfig = VoiceConnectionConfig.Direct(userAppId, userKey)
+        } else if (app.meowAppAuth.isLoggedIn.value) {
+            val token = app.meowAppAuth.getAccessToken()
+            if (token != null) {
+                Log.i(TAG, "Using TutuAI proxy via login token")
+                connectionConfig = VoiceConnectionConfig.Proxy(token)
+            } else {
+                Log.w(TAG, "Logged in but token expired")
+                app.requestLogin("登录已过期，请重新登录后使用语音助手")
+                return
+            }
+        } else {
+            Log.w(TAG, "No speech credentials and not logged in")
+            _voiceErrorEvent.tryEmit("使用语音助手需要登录图图AI账号，或在高级设置中配置自己的豆包语音 Key")
+            return
+        }
+
         _voiceState.value = VoiceState.CONNECTING
         Log.i(TAG, "Starting voice session...")
 
@@ -61,7 +99,6 @@ class VoiceSessionManager(
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
         audioManager.isSpeakerphoneOn = true
 
-        val app = context.applicationContext as MeowApp
         val deviceCache: DeviceInfoCache = app.deviceCache
         val socketBridge = SocketCommandBridge(app.tutuClient, deviceCache)
         val chatAgent = ChatAgent(
@@ -127,6 +164,7 @@ class VoiceSessionManager(
 
             override fun onError(message: String) {
                 Log.w(TAG, "Socket error: $message")
+                _voiceErrorEvent.tryEmit(message)
             }
 
             override fun onDisconnected() {
@@ -137,7 +175,7 @@ class VoiceSessionManager(
             }
         }
 
-        val newSocket = DoubaoVoiceSocket(appId, accessKey, callback)
+        val newSocket = DoubaoVoiceSocket(connectionConfig, callback)
         socket = newSocket
 
         taskBridge = VoiceTaskBridge(

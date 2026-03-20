@@ -17,21 +17,33 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+/** 语音 WebSocket 连接配置 */
+sealed class VoiceConnectionConfig {
+    /** 用户自有 Key，直连豆包官方 */
+    data class Direct(val appId: String, val accessKey: String) : VoiceConnectionConfig()
+    /** TutuAI 中转代理，用 MeowApp access_token 认证 */
+    data class Proxy(val accessToken: String) : VoiceConnectionConfig()
+}
+
 /**
  * 豆包实时语音 WebSocket 管理器。
  *
  * 状态机：IDLE → CONNECTING → SENT_START_CONNECTION → SENT_START_SESSION → READY → IDLE
  *
+ * 支持两种连接模式：
+ * - [VoiceConnectionConfig.Direct]：直连豆包官方 WebSocket
+ * - [VoiceConnectionConfig.Proxy]：通过 TutuAI 中转代理连接
+ *
  * 通过 [VoiceSocketCallback] 回调通知外部关键事件。
  */
 class DoubaoVoiceSocket(
-    private val appId: String,
-    private val accessKey: String,
+    private val config: VoiceConnectionConfig,
     private val callback: VoiceSocketCallback
 ) {
     companion object {
         private const val TAG = "MeowVoice.Socket"
-        private const val URL = "wss://openspeech.bytedance.com/api/v3/realtime/dialogue"
+        private const val DIRECT_URL = "wss://openspeech.bytedance.com/api/v3/realtime/dialogue"
+        private const val PROXY_URL = "wss://tutuai.me/ws/doubao-realtime"
         private const val CONNECT_TIMEOUT_MS = 10_000L
         private const val MAX_RECONNECT_ATTEMPTS = 3
         private const val RECONNECT_BASE_DELAY_MS = 1_000L
@@ -99,14 +111,26 @@ class DoubaoVoiceSocket(
             .pingInterval(15, TimeUnit.SECONDS)
             .build()
 
-        val request = Request.Builder()
-            .url(URL)
-            .addHeader("X-Api-App-ID", appId)
-            .addHeader("X-Api-Access-Key", accessKey)
-            .addHeader("X-Api-Resource-Id", "volc.speech.dialog")
-            .addHeader("X-Api-App-Key", "PlgvMymc7f3tQnJ6")
-            .addHeader("X-Api-Connect-Id", UUID.randomUUID().toString())
-            .build()
+        val request = when (config) {
+            is VoiceConnectionConfig.Direct -> {
+                Log.d(TAG, "Connecting DIRECT to Doubao")
+                Request.Builder()
+                    .url(DIRECT_URL)
+                    .addHeader("X-Api-App-ID", config.appId)
+                    .addHeader("X-Api-Access-Key", config.accessKey)
+                    .addHeader("X-Api-Resource-Id", "volc.speech.dialog")
+                    .addHeader("X-Api-App-Key", "PlgvMymc7f3tQnJ6")
+                    .addHeader("X-Api-Connect-Id", UUID.randomUUID().toString())
+                    .build()
+            }
+            is VoiceConnectionConfig.Proxy -> {
+                Log.d(TAG, "Connecting via TutuAI PROXY")
+                Request.Builder()
+                    .url("$PROXY_URL?api_key=${config.accessToken}")
+                    .addHeader("X-Api-Connect-Id", UUID.randomUUID().toString())
+                    .build()
+            }
+        }
 
         webSocket = client!!.newWebSocket(request, socketListener)
         scheduleConnectTimeout()
@@ -472,7 +496,25 @@ ${taskStateContext}
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             Log.d(TAG, "WebSocket closing: $code / $reason")
-            webSocket.close(1000, null)
+            webSocket.close(code, null)
+
+            val proxyError = when (code) {
+                4001 -> "认证信息缺失，请重新登录"
+                4002 -> "积分不足，请充值后再使用语音助手"
+                4003 -> "登录已过期，请重新登录"
+                4004 -> "单次通话已达10分钟上限，已自动断开"
+                4005 -> "语音服务暂时不可用，请稍后重试"
+                else -> null
+            }
+            if (proxyError != null) {
+                Log.w(TAG, "Proxy close code=$code: $proxyError")
+                isStopped = true
+                phase = Phase.IDLE
+                callback.onError(proxyError)
+                callback.onDisconnected()
+                return
+            }
+
             if (!isStopped) {
                 scheduleReconnect("onClosing")
             }

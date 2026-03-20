@@ -49,13 +49,7 @@ class AiSettingsManager(context: Context) {
         set(value) = prefs.edit().putString(KEY_SPEECH_ACCESS_KEY, value.trim()).apply()
 
     val isSpeechConfigured: Boolean
-        get() {
-            val userAppId = speechAppId
-            val userKey = speechAccessKey
-            if (userAppId.isNotBlank() && userKey.isNotBlank()) return true
-            return BuildConfig.DOUBAO_SPEECH_APP_ID.isNotBlank() &&
-                    BuildConfig.DOUBAO_SPEECH_ACCESS_KEY.isNotBlank()
-        }
+        get() = speechAppId.isNotBlank() && speechAccessKey.isNotBlank()
 
     /** 获取生效的语音 App ID（优先用户配置，fallback BuildConfig） */
     val effectiveSpeechAppId: String

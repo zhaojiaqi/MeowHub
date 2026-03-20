@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutu.meowhub.MeowApp
 import com.tutu.meowhub.R
 import com.tutu.meowhub.core.model.ConnectionState
+import com.tutu.meowhub.core.voice.VoiceSessionManager
 import com.tutu.meowhub.ui.theme.*
 
 private val ChatBg = MeowSurfaceDark
@@ -304,6 +305,10 @@ private fun ChatInputBar(
     onSend: () -> Unit,
     onStop: () -> Unit
 ) {
+    val voiceManager = MeowApp.instance.voiceSessionManager
+    val voiceState by voiceManager.voiceState.collectAsState()
+    val isVoiceActive = voiceState != VoiceSessionManager.VoiceState.IDLE
+
     HorizontalDivider(color = BorderColor, thickness = 1.dp)
     Row(
         modifier = Modifier
@@ -312,6 +317,20 @@ private fun ChatInputBar(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(
+            onClick = { voiceManager.toggle() },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                if (isVoiceActive) Icons.Outlined.MicOff else Icons.Outlined.Mic,
+                contentDescription = if (isVoiceActive) "停止语音" else "启动语音",
+                tint = if (isVoiceActive) MeowRed else TextSecondary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Spacer(Modifier.width(4.dp))
+
         TextField(
             value = inputText,
             onValueChange = onInputChange,

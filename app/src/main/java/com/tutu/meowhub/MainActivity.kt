@@ -114,11 +114,20 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
     var loginPromptReason by remember { mutableStateOf("") }
     var showSocketAuthDialog by remember { mutableStateOf(false) }
     var hasShownSocketAuthDialog by remember { mutableStateOf(false) }
+    var showVoiceErrorDialog by remember { mutableStateOf(false) }
+    var voiceErrorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         MeowApp.instance.loginRequiredEvent.collect { reason ->
             loginPromptReason = reason
             showLoginPrompt = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        MeowApp.instance.voiceSessionManager.voiceErrorEvent.collect { message ->
+            voiceErrorMessage = message
+            showVoiceErrorDialog = true
         }
     }
 
@@ -168,6 +177,19 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
             dismissButton = {
                 TextButton(onClick = { showLoginPrompt = false }) {
                     Text("取消")
+                }
+            }
+        )
+    }
+
+    if (showVoiceErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showVoiceErrorDialog = false },
+            title = { Text("语音助手") },
+            text = { Text(voiceErrorMessage) },
+            confirmButton = {
+                TextButton(onClick = { showVoiceErrorDialog = false }) {
+                    Text("确定")
                 }
             }
         )

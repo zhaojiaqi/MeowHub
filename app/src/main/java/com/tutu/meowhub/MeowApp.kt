@@ -43,11 +43,7 @@ class MeowApp : Application() {
     val appToolManager: AppToolManager by lazy { AppToolManager(this) }
 
     val voiceSessionManager: VoiceSessionManager by lazy {
-        VoiceSessionManager(
-            context = this,
-            appId = aiSettings.effectiveSpeechAppId,
-            accessKey = aiSettings.effectiveSpeechAccessKey
-        )
+        VoiceSessionManager(context = this)
     }
 
     val wakeWordDetector: WakeWordDetector by lazy {
