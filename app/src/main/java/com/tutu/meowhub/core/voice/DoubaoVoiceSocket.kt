@@ -43,6 +43,8 @@ class DoubaoVoiceSocket(
         fun onAudioReceived(pcmData: ByteArray)
         /** ASRInfo - 用户开始说话，应打断播放 */
         fun onUserSpeaking()
+        /** 豆包识别到用户退出意图（如"再见"、"结束对话"），客户端应结束语音会话 */
+        fun onExitDetected()
         /** 错误 */
         fun onError(message: String)
         /** 连接断开 */
@@ -133,14 +135,22 @@ class DoubaoVoiceSocket(
     }
 
     /**
-     * 断开连接并清理资源。
+     * 优雅断开：发送 FinishSession + FinishConnection 后关闭 WebSocket。
      */
     @Synchronized
     fun disconnect() {
         Log.d(TAG, "disconnect()")
         isStopped = true
-        phase = Phase.IDLE
         cancelConnectTimeout()
+        if (phase == Phase.READY) {
+            try {
+                sendFinishSession()
+                sendFinishConnection()
+            } catch (e: Throwable) {
+                Log.w(TAG, "Error sending finish events: ${e.message}")
+            }
+        }
+        phase = Phase.IDLE
         try {
             webSocket?.close(1000, null)
         } catch (_: Throwable) {}
@@ -225,13 +235,14 @@ class DoubaoVoiceSocket(
                     put("strict_audit", false)
                     put("input_mod", "keep_alive")
                     put("enable_music", true)
+                    put("enable_user_query_exit", true)
                     put("model", "1.2.1.1")
                 })
             })
         }
         sendJsonEvent(RealtimeProtocol.EVT_START_SESSION, req, includeSid = true)
         phase = Phase.SENT_START_SESSION
-        Log.d(TAG, "Sent StartSession, sid=$sessionId, dialogId=$dialogId")
+        Log.d(TAG, "Sent StartSession, sid=$sessionId, dialogId=$dialogId, payload=$req")
     }
 
     private fun sendSayHello(content: String) {
@@ -249,6 +260,11 @@ class DoubaoVoiceSocket(
     private fun sendFinishSession() {
         sendJsonEvent(RealtimeProtocol.EVT_FINISH_SESSION, JSONObject(), includeSid = true)
         Log.d(TAG, "Sent FinishSession")
+    }
+
+    private fun sendFinishConnection() {
+        sendJsonEvent(RealtimeProtocol.EVT_FINISH_CONNECTION, JSONObject(), includeSid = false)
+        Log.d(TAG, "Sent FinishConnection")
     }
 
     // ========================== 内部：连接管理 ==========================
@@ -369,6 +385,7 @@ class DoubaoVoiceSocket(
     private fun handleServerResponse(parsed: RealtimeProtocol.ParsedResponse) {
         val event = parsed.event
         val json = parsed.payloadJson
+        Log.d(TAG, "ServerEvent: ${RealtimeProtocol.eventName(event)}($event), json=$json")
 
         // 握手阶段处理
         if (phase == Phase.SENT_START_CONNECTION && event == RealtimeProtocol.SVR_CONNECTION_STARTED) {
@@ -445,7 +462,15 @@ class DoubaoVoiceSocket(
                 Log.d(TAG, "[TTS] 开始播放")
             }
             RealtimeProtocol.SVR_TTS_ENDED -> {
-                Log.d(TAG, "[TTS] 播放结束")
+                Log.d(TAG, "[TTS] 播放结束, payload=$json")
+                try {
+                    val obj = JSONObject(json ?: "{}")
+                    val statusCode = obj.optString("status_code", "")
+                    if (statusCode == "20000002") {
+                        Log.i(TAG, "[EXIT] 豆包识别到用户退出意图，准备结束会话")
+                        callback.onExitDetected()
+                    }
+                } catch (_: Throwable) {}
             }
             RealtimeProtocol.SVR_DIALOG_ERROR -> {
                 val obj = try { JSONObject(json ?: "{}") } catch (_: Throwable) { JSONObject() }
@@ -455,16 +480,19 @@ class DoubaoVoiceSocket(
                 callback.onError("对话错误($statusCode): $message")
             }
             RealtimeProtocol.SVR_USAGE_RESPONSE -> {
-                // Token 用量统计
                 try {
                     val obj = JSONObject(json ?: "{}")
                     val usage = obj.optJSONObject("usage")
                     if (usage != null) {
-                        val textIn = usage.optLong("input_text_tokens")
-                        val audioIn = usage.optLong("input_audio_tokens")
-                        val textOut = usage.optLong("output_text_tokens")
-                        val audioOut = usage.optLong("output_audio_tokens")
-                        Log.d(TAG, "[Usage] in=$textIn+${audioIn}a, out=$textOut+${audioOut}a")
+                        val inputText = usage.optLong("input_text_tokens")
+                        val inputAudio = usage.optLong("input_audio_tokens")
+                        val cachedText = usage.optLong("cached_text_tokens")
+                        val cachedAudio = usage.optLong("cached_audio_tokens")
+                        val outputText = usage.optLong("output_text_tokens")
+                        val outputAudio = usage.optLong("output_audio_tokens")
+                        Log.d(TAG, "[Usage] input(text=$inputText, audio=$inputAudio) " +
+                            "cached(text=$cachedText, audio=$cachedAudio) " +
+                            "output(text=$outputText, audio=$outputAudio)")
                     }
                 } catch (_: Throwable) {}
             }

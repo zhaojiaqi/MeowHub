@@ -2,6 +2,8 @@ package com.tutu.meowhub.core.voice
 
 import android.content.Context
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,10 +21,12 @@ class VoiceSessionManager(
 ) {
     companion object {
         private const val TAG = "VoiceSessionMgr"
+        private const val EXIT_DELAY_MS = 1500L
     }
 
     enum class VoiceState { IDLE, CONNECTING, ACTIVE, STOPPING }
 
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val _voiceState = MutableStateFlow(VoiceState.IDLE)
     val voiceState: StateFlow<VoiceState> = _voiceState.asStateFlow()
 
@@ -79,6 +83,16 @@ class VoiceSessionManager(
                 player?.start()
             }
 
+            override fun onExitDetected() {
+                Log.i(TAG, "User exit intent detected, waiting ${EXIT_DELAY_MS}ms for audio to finish")
+                mainHandler.postDelayed({
+                    if (_voiceState.value == VoiceState.ACTIVE) {
+                        Log.i(TAG, "Exit delay elapsed, stopping session")
+                        stopSession()
+                    }
+                }, EXIT_DELAY_MS)
+            }
+
             override fun onError(message: String) {
                 Log.w(TAG, "Socket error: $message")
             }
@@ -116,6 +130,7 @@ class VoiceSessionManager(
     }
 
     private fun cleanupInternal() {
+        mainHandler.removeCallbacksAndMessages(null)
         recorder?.stop()
         recorder = null
         player?.stop()
