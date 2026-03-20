@@ -58,8 +58,20 @@ object RealtimeProtocol {
     const val EVT_FINISH_SESSION = 102
     /** 音频数据帧 */
     const val EVT_AUDIO_TASK = 200
+    /** 通话中更新配置（system_role 等） */
+    const val EVT_UPDATE_CONFIG = 201
     /** 开场白 */
     const val EVT_SAY_HELLO = 300
+    /** 客户端指定 TTS 文本合成 */
+    const val EVT_CHAT_TTS_TEXT = 500
+    /** 客户端文本 query */
+    const val EVT_CHAT_TEXT_QUERY = 501
+    /** 客户端外部 RAG 输入 */
+    const val EVT_CHAT_RAG_TEXT = 502
+    /** 追加上下文（QA 对） */
+    const val EVT_CONVERSATION_CREATE = 510
+    /** 更新已有上下文（按 item_id） */
+    const val EVT_CONVERSATION_UPDATE = 511
 
     // ========================== 服务端事件 ID ==========================
     /** 连接建立成功 */
@@ -76,6 +88,8 @@ object RealtimeProtocol {
     const val SVR_SESSION_FAILED = 153
     /** 用量统计 */
     const val SVR_USAGE_RESPONSE = 154
+    /** UpdateConfig 请求的 ACK */
+    const val SVR_CONFIG_UPDATED = 251
     /** TTS 句子开始 */
     const val SVR_TTS_SENTENCE_START = 350
     /** TTS 句子结束 */
@@ -94,6 +108,12 @@ object RealtimeProtocol {
     const val SVR_CHAT_RESPONSE = 550
     /** AI 对话回复结束 */
     const val SVR_CHAT_ENDED = 559
+    /** ChatTextQuery 确认 ACK */
+    const val SVR_CHAT_TEXT_QUERY_CONFIRMED = 553
+    /** ConversationCreate ACK */
+    const val SVR_CONVERSATION_CREATED = 567
+    /** ConversationUpdate ACK */
+    const val SVR_CONVERSATION_UPDATED = 568
     /** 对话过程通用错误 */
     const val SVR_DIALOG_ERROR = 599
 
@@ -271,8 +291,12 @@ object RealtimeProtocol {
         SVR_ASR_INFO -> "ASRInfo"
         SVR_ASR_RESPONSE -> "ASRResponse"
         SVR_ASR_ENDED -> "ASREnded"
+        SVR_CONFIG_UPDATED -> "ConfigUpdated"
         SVR_CHAT_RESPONSE -> "ChatResponse"
         SVR_CHAT_ENDED -> "ChatEnded"
+        SVR_CHAT_TEXT_QUERY_CONFIRMED -> "ChatTextQueryConfirmed"
+        SVR_CONVERSATION_CREATED -> "ConversationCreated"
+        SVR_CONVERSATION_UPDATED -> "ConversationUpdated"
         SVR_DIALOG_ERROR -> "DialogCommonError"
         else -> "Unknown($event)"
     }

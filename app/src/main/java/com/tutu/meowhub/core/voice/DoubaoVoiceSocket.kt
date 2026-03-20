@@ -9,6 +9,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.util.UUID
@@ -29,7 +30,7 @@ class DoubaoVoiceSocket(
     private val callback: VoiceSocketCallback
 ) {
     companion object {
-        private const val TAG = "DoubaoVoiceSocket"
+        private const val TAG = "MeowVoice.Socket"
         private const val URL = "wss://openspeech.bytedance.com/api/v3/realtime/dialogue"
         private const val CONNECT_TIMEOUT_MS = 10_000L
         private const val MAX_RECONNECT_ATTEMPTS = 3
@@ -37,17 +38,22 @@ class DoubaoVoiceSocket(
     }
 
     interface VoiceSocketCallback {
-        /** Session 就绪，可以发送音频 */
         fun onReady()
-        /** 收到 TTS 音频（PCM 24kHz 16bit mono） */
+        /** TTS 音频数据到达（PCM 24kHz 16bit mono） */
         fun onAudioReceived(pcmData: ByteArray)
-        /** ASRInfo - 用户开始说话，应打断播放 */
+        /** TTSSentenceStart — 携带 tts_type 供 AudioGate 判断 */
+        fun onTtsSentenceStart(ttsType: String)
+        /** TTSEnded — 一轮 TTS 结束 */
+        fun onTtsEnded()
+        /** ASRInfo — 用户开始说话 */
         fun onUserSpeaking()
-        /** 豆包识别到用户退出意图（如"再见"、"结束对话"），客户端应结束语音会话 */
+        /** ChatResponse 增量文本（流式），供 Bridge 实时检测标记 */
+        fun onChatToken(token: String)
+        /** ChatEnded — AI 本轮回复完成，传出完整文本和 replyId（用于 ConversationUpdate） */
+        fun onChatCompleted(fullText: String, replyId: String)
+        /** 豆包识别到用户退出意图 */
         fun onExitDetected()
-        /** 错误 */
         fun onError(message: String)
-        /** 连接断开 */
         fun onDisconnected()
     }
 
@@ -65,6 +71,11 @@ class DoubaoVoiceSocket(
     private var connectTimeoutRunnable: Runnable? = null
     private var sessionId: String = ""
     private val aiResponseBuffer = StringBuilder()
+    private var currentReplyId: String = ""
+
+    /** 外部注入的设备上下文和任务状态，用于构建 system_role */
+    var deviceContext: String = ""
+    var taskStateContext: String = "当前无任务在执行"
 
     val isReady: Boolean get() = phase == Phase.READY
 
@@ -208,6 +219,27 @@ class DoubaoVoiceSocket(
         Log.d(TAG, "Sent StartConnection")
     }
 
+    private fun buildSystemRole(): String = """
+你是 MeowHub 智能助手，名字叫图图，连接着用户的手机，可以帮用户操控手机。
+
+规则：
+1. 当用户要求操控手机（打开应用、发消息、查快递、设闹钟等），只回复任务标记：
+   [TASK:具体任务描述]
+   不要加任何闲聊，只返回标记。
+
+2. 当用户询问手机状态（电量、存储、WiFi、已装应用等），只回复查询标记：
+   [QUERY:battery] 或 [QUERY:storage] 或 [QUERY:wifi] 或 [QUERY:apps]
+
+3. 其他闲聊正常对话，不加任何标记。说话风格简洁自然，像朋友聊天。
+
+4. 当前有任务在执行时，用户问进度就用语言回答当前状态，不加标记。
+
+5. 当收到外部知识（RAG内容）时，用自然口语简洁地告知用户结果，绝对不要输出[TASK]或[QUERY]标记，也不要复述原文，用你自己的话总结。
+
+当前手机状态：${deviceContext.ifEmpty { "未知" }}
+${taskStateContext}
+""".trimIndent()
+
     private fun sendStartSession() {
         val dialogId = UUID.randomUUID().toString()
         val req = JSONObject().apply {
@@ -227,8 +259,8 @@ class DoubaoVoiceSocket(
                 })
             })
             put("dialog", JSONObject().apply {
-                put("bot_name", "MeowHub助手")
-                put("system_role", "你是 MeowHub 智能助手，名字叫图图，通过语音帮助用户操控手机。回答要简洁自然，像朋友聊天一样。")
+                put("bot_name", "图图")
+                put("system_role", buildSystemRole())
                 put("speaking_style", "你的说话风格简洁明了，语速适中，语调自然亲切。")
                 put("dialog_id", dialogId)
                 put("extra", JSONObject().apply {
@@ -242,7 +274,7 @@ class DoubaoVoiceSocket(
         }
         sendJsonEvent(RealtimeProtocol.EVT_START_SESSION, req, includeSid = true)
         phase = Phase.SENT_START_SESSION
-        Log.d(TAG, "Sent StartSession, sid=$sessionId, dialogId=$dialogId, payload=$req")
+        Log.d(TAG, "Sent StartSession, sid=$sessionId, dialogId=$dialogId")
     }
 
     private fun sendSayHello(content: String) {
@@ -265,6 +297,82 @@ class DoubaoVoiceSocket(
     private fun sendFinishConnection() {
         sendJsonEvent(RealtimeProtocol.EVT_FINISH_CONNECTION, JSONObject(), includeSid = false)
         Log.d(TAG, "Sent FinishConnection")
+    }
+
+    // ========================== 公开：业务事件发送 ==========================
+
+    /**
+     * 发送外部 RAG 文本，豆包会总结后用语音播报。
+     * 必须在 ASREnded 之后调用。
+     */
+    /**
+     * 指定文本直接 TTS 合成播放（事件 500）。
+     * 按协议拆成首包（start+content）和尾包（end）两帧发送。
+     * 必须在收到 ASREnded 之后调用。
+     */
+    fun sendChatTTSText(text: String) {
+        if (phase != Phase.READY) return
+        val startPayload = JSONObject().apply {
+            put("start", true)
+            put("content", text)
+            put("end", false)
+        }
+        sendJsonEvent(RealtimeProtocol.EVT_CHAT_TTS_TEXT, startPayload, includeSid = true)
+        val endPayload = JSONObject().apply {
+            put("start", false)
+            put("content", "")
+            put("end", true)
+        }
+        sendJsonEvent(RealtimeProtocol.EVT_CHAT_TTS_TEXT, endPayload, includeSid = true)
+        Log.i(TAG, "[TTS] Sent ChatTTSText: $text")
+    }
+
+    fun sendChatRAGText(ragItems: List<Pair<String, String>>) {
+        if (phase != Phase.READY) return
+        val arr = JSONArray()
+        ragItems.forEach { (title, content) ->
+            arr.put(JSONObject().apply {
+                put("title", title)
+                put("content", content)
+            })
+        }
+        val payload = JSONObject().apply {
+            put("external_rag", arr.toString())
+        }
+        sendJsonEvent(RealtimeProtocol.EVT_CHAT_RAG_TEXT, payload, includeSid = true)
+        Log.i(TAG, "[RAG] Sent ChatRAGText: ${ragItems.size} items")
+    }
+
+    /**
+     * 通话中动态更新配置（system_role 等）。
+     */
+    fun sendUpdateConfig() {
+        if (phase != Phase.READY) return
+        val payload = JSONObject().apply {
+            put("dialog", JSONObject().apply {
+                put("system_role", buildSystemRole())
+            })
+        }
+        sendJsonEvent(RealtimeProtocol.EVT_UPDATE_CONFIG, payload, includeSid = true)
+        Log.d(TAG, "[Config] Sent UpdateConfig")
+    }
+
+    /**
+     * 用 ConversationUpdate 修改指定 reply_id 对应的模型回复文本，
+     * 使豆包上下文记录为自然语言而非 [TASK:...] 标记。
+     */
+    fun sendConversationUpdate(itemId: String, newText: String) {
+        if (phase != Phase.READY) return
+        val payload = JSONObject().apply {
+            put("items", JSONArray().apply {
+                put(JSONObject().apply {
+                    put("item_id", itemId)
+                    put("text", newText)
+                })
+            })
+        }
+        sendJsonEvent(RealtimeProtocol.EVT_CONVERSATION_UPDATE, payload, includeSid = true)
+        Log.d(TAG, "[Context] Sent ConversationUpdate: itemId=$itemId")
     }
 
     // ========================== 内部：连接管理 ==========================
@@ -441,36 +549,53 @@ class DoubaoVoiceSocket(
                 Log.d(TAG, "[ASR] 用户说话结束")
             }
             RealtimeProtocol.SVR_CHAT_RESPONSE -> {
-                // AI 回复增量文本：累积到 buffer
                 try {
                     val obj = JSONObject(json ?: "{}")
+                    val replyId = obj.optString("reply_id", "")
+                    if (replyId.isNotEmpty()) currentReplyId = replyId
                     val content = obj.optString("content", "")
                     if (content.isNotEmpty()) {
                         aiResponseBuffer.append(content)
+                        callback.onChatToken(content)
                     }
                 } catch (_: Throwable) {}
             }
             RealtimeProtocol.SVR_CHAT_ENDED -> {
-                // AI 回复完成，打印完整回复
                 val fullReply = aiResponseBuffer.toString()
+                val replyId = currentReplyId
                 if (fullReply.isNotEmpty()) {
                     Log.i(TAG, "[AI] $fullReply")
                 }
                 aiResponseBuffer.setLength(0)
+                currentReplyId = ""
+                callback.onChatCompleted(fullReply, replyId)
             }
             RealtimeProtocol.SVR_TTS_SENTENCE_START -> {
-                Log.d(TAG, "[TTS] 开始播放")
+                val ttsType = try {
+                    JSONObject(json ?: "{}").optString("tts_type", "default")
+                } catch (_: Throwable) { "default" }
+                Log.d(TAG, "[TTS] SentenceStart tts_type=$ttsType")
+                callback.onTtsSentenceStart(ttsType)
             }
             RealtimeProtocol.SVR_TTS_ENDED -> {
-                Log.d(TAG, "[TTS] 播放结束, payload=$json")
+                Log.d(TAG, "[TTS] Ended, payload=$json")
+                callback.onTtsEnded()
                 try {
                     val obj = JSONObject(json ?: "{}")
-                    val statusCode = obj.optString("status_code", "")
-                    if (statusCode == "20000002") {
-                        Log.i(TAG, "[EXIT] 豆包识别到用户退出意图，准备结束会话")
+                    if (obj.optString("status_code", "") == "20000002") {
+                        Log.i(TAG, "[EXIT] 豆包识别到用户退出意图")
                         callback.onExitDetected()
                     }
                 } catch (_: Throwable) {}
+            }
+            RealtimeProtocol.SVR_CONFIG_UPDATED -> {
+                Log.d(TAG, "[Config] UpdateConfig ACK")
+            }
+            RealtimeProtocol.SVR_CONVERSATION_CREATED -> {
+                Log.d(TAG, "[Context] ConversationCreate ACK")
+            }
+            RealtimeProtocol.SVR_CONVERSATION_UPDATED -> {
+                Log.d(TAG, "[Context] ConversationUpdate ACK: $json")
             }
             RealtimeProtocol.SVR_DIALOG_ERROR -> {
                 val obj = try { JSONObject(json ?: "{}") } catch (_: Throwable) { JSONObject() }
