@@ -89,7 +89,6 @@ class DoubaoAiProvider(
             put("input", input)
             put("max_output_tokens", maxTokens)
             put("stream", true)
-            put("temperature", 0.0)
             put("tools", buildJsonArray {
                 addJsonObject {
                     put("type", "web_search")
@@ -210,7 +209,6 @@ class DoubaoAiProvider(
             put("messages", messages)
             put("max_tokens", maxTokens)
             put("stream", true)
-            put("temperature", 0.0)
         }
 
         val conn = openConnection("${baseUrl.trimEnd('/')}/chat/completions", requestBody)
