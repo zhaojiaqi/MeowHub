@@ -27,8 +27,8 @@ android {
         applicationId = "com.tutu.meowhub"
         minSdk = 28
         targetSdk = 28
-        versionCode = 4
-        versionName = "1.4"
+        versionCode = 5
+        versionName = "1.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
