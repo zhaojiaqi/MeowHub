@@ -5,9 +5,18 @@ import com.tutu.meowhub.core.model.MeowSkillDetailResponse
 import com.tutu.meowhub.core.model.MeowSkillListResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
+
+@Serializable
+data class MeowAppVersionInfo(
+    val latest_version: String = "",
+    val latest_version_code: Int = 0,
+    val download_page: String = "",
+    val notes: String = ""
+)
 
 class MeowHubApiClient {
 
@@ -90,6 +99,35 @@ class MeowHubApiClient {
                 } else {
                     Result.failure(Exception(response.message ?: "获取 Skill 详情失败"))
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun fetchLatestVersion(): Result<MeowAppVersionInfo> =
+        withContext(Dispatchers.IO) {
+            try {
+                val url = URL("$BASE_URL/api/meowapp/version.php")
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
+                    setRequestProperty("Accept", "application/json")
+                }
+
+                val responseCode = conn.responseCode
+                val body = if (responseCode in 200..299) {
+                    conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                } else {
+                    conn.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
+                }
+                conn.disconnect()
+
+                if (responseCode !in 200..299) {
+                    return@withContext Result.failure(Exception("HTTP $responseCode: $body"))
+                }
+
+                Result.success(json.decodeFromString<MeowAppVersionInfo>(body))
             } catch (e: Exception) {
                 Result.failure(e)
             }

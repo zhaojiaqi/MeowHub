@@ -18,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -29,6 +30,8 @@ import com.tutu.meowhub.core.service.MeowOverlayService
 import com.tutu.meowhub.feature.account.AccountScreen
 import com.tutu.meowhub.feature.account.LoginScreen
 import com.tutu.meowhub.feature.debug.DebugScreen
+import com.tutu.meowhub.core.network.MeowAppVersionInfo
+import com.tutu.meowhub.core.network.MeowHubApiClient
 import com.tutu.meowhub.feature.navigation.MainScreen
 import com.tutu.meowhub.feature.settings.AdvancedSettingsScreen
 import com.tutu.meowhub.feature.settings.AppToolsScreen
@@ -110,12 +113,31 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
     val navController = rememberNavController()
+    val context = LocalContext.current
     var showLoginPrompt by remember { mutableStateOf(false) }
     var loginPromptReason by remember { mutableStateOf("") }
     var showSocketAuthDialog by remember { mutableStateOf(false) }
     var hasShownSocketAuthDialog by remember { mutableStateOf(false) }
     var showVoiceErrorDialog by remember { mutableStateOf(false) }
     var voiceErrorMessage by remember { mutableStateOf("") }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var updateInfo by remember { mutableStateOf<MeowAppVersionInfo?>(null) }
+
+    // 启动时静默检查新版本：有更高 versionCode 才提示，网络失败忽略
+    LaunchedEffect(Unit) {
+        MeowHubApiClient().fetchLatestVersion()
+            .onSuccess { info ->
+                android.util.Log.i(
+                    "UpdateCheck",
+                    "current=${BuildConfig.VERSION_CODE} latest=${info.latest_version_code} (v${info.latest_version}) update=${info.latest_version_code > BuildConfig.VERSION_CODE}"
+                )
+                if (info.latest_version_code > BuildConfig.VERSION_CODE) {
+                    updateInfo = info
+                    showUpdateDialog = true
+                }
+            }
+            .onFailure { android.util.Log.w("UpdateCheck", "version check failed: ${it.message}") }
+    }
 
     LaunchedEffect(Unit) {
         MeowApp.instance.loginRequiredEvent.collect { reason ->
@@ -193,6 +215,37 @@ fun MainNavigation(onRequestOverlayPermission: () -> Unit) {
                 }
             }
         )
+    }
+
+    updateInfo?.let { info ->
+        if (showUpdateDialog) {
+            AlertDialog(
+                onDismissRequest = { showUpdateDialog = false },
+                title = { Text("发现新版本 v${info.latest_version}") },
+                text = {
+                    Text(
+                        if (info.notes.isNotBlank()) info.notes
+                        else "检测到可用更新，建议前往网页下载安装最新版本。"
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showUpdateDialog = false
+                        val target = info.download_page.ifBlank { "https://tutuai.me/admin/meowapp.php" }
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target)))
+                        }
+                    }) {
+                        Text("立即更新")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUpdateDialog = false }) {
+                        Text("稍后")
+                    }
+                }
+            )
+        }
     }
 
     NavHost(
