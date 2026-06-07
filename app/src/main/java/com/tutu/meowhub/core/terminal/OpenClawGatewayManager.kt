@@ -239,7 +239,6 @@ class OpenClawGatewayManager(private val context: Context) {
             append("export PATH='$prefix/bin:$prefix/bin/applets:/system/bin' && ")
             append("export LD_LIBRARY_PATH='$prefix/lib' && ")
             append("export NODE_OPTIONS=\"-r \$HOME/bionic-compat.js\" && ")
-            append("export SHARP_IGNORE_GLOBAL_LIBVIPS=1 && ")
             append("echo '[gateway] starting node process...' && ")
             append("exec $prefix/bin/node $openclawEntry gateway --allow-unconfigured --auth none --port 18789 --verbose")
         }
